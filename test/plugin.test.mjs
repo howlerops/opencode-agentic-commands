@@ -52,6 +52,8 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /PR-review repair loops/)
   assert.match(text, /Maximum parallel subagents: 4/)
   assert.match(text, /critic confirms no remaining required work/)
+  assert.match(text, /Only stop before completion when you hit a concrete blocker/)
+  assert.match(text, /do not call the task complete and do not exit/)
 }
 
 {

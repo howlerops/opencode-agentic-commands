@@ -170,7 +170,7 @@ You can install only one command by using subpath exports:
 - Commands appear in the OpenCode TUI slash-command list after restart.
 - No custom TUI screen is included; the TUI already exposes custom slash commands and descriptions.
 - `/goal` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
-- `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It prefers subagents for independent stories and review passes when safe, and should only claim completion when review finds no actionable findings.
+- `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It prefers subagents for independent stories and review passes when safe, and should only stop before completion for a concrete blocker it cannot resolve.
 - `/ultraplan` is intentionally non-mutating by default: it plans, reviews the plan, and recommends the first execution command.
 - `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
 - `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention.

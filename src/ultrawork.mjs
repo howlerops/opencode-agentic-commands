@@ -25,6 +25,9 @@ $ARGUMENTS
 Operating principle:
 - Do not stop after one pass.
 - Treat each pass as incomplete until a critic review explicitly confirms the full task is done.
+- Do not exit early because work is large, tests fail, review findings remain, context is uncomfortable, or another loop is needed.
+- Only stop before completion when you hit a concrete blocker you cannot resolve with available tools, repo context, user-provided information, and reasonable implementation choices.
+- When you hit a possible blocker, first try to resolve it: inspect more files, run narrower checks, simplify the approach, repair the failure, or ask one concise clarifying question if missing user input is the only blocker.
 - Use ${options.goalCommand} semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize.
 - Completion standard: ${options.completionStandard}.
 
@@ -38,7 +41,7 @@ Parallelism and subagents:
 Loop limits:
 - Maximum implementation goal loops: ${options.maxGoalLoops}.
 - Maximum PR review repair loops: ${options.maxReviewLoops}.
-- If a loop limit is reached before completion, stop and report the remaining blockers instead of claiming completion.
+- Loop limits are safety rails, not normal stopping points. If a loop limit is reached before completion, continue only if the environment explicitly permits raising the limit; otherwise report the exact unresolved blocker and do not claim completion.
 
 Phase 1: initial goal execution
 1. Start with this implementation loop prompt:
@@ -69,9 +72,10 @@ Phase 2: critic-driven implementation loops
    - What risks could cause a behavioral regression?
    - Are there files/commits that still need cleanup?
 4. If the critic finds any required work, create a new goal loop that targets only the remaining work:
-   ${options.goalCommand} <remaining required work from critic>
+    ${options.goalCommand} <remaining required work from critic>
 5. Repeat implementation + critic loops until the critic says all required work is complete and all required verification has passed.
 6. Do not treat vague optimism as completion. The critic must explicitly say there is no remaining required work.
+7. If the critic identifies work that seems difficult or broad, split it smaller and continue rather than exiting.
 
 Phase 3: final PR review
 1. Review the changed commits/files/branch as if preparing a pull request.
@@ -87,6 +91,7 @@ Phase 4: PR-review repair loops
 2. Re-run relevant verification.
 3. Run PR review again.
 4. Repeat until the PR review finds no actionable issues.
+5. If a review finding cannot be fixed, prove why it is unresolvable with the current tools/context before stopping.
 
 Phase 5: completion report
 Only when both the implementation critic and the PR review find nothing left, produce the final report:
@@ -99,7 +104,9 @@ Only when both the implementation critic and the PR review find nothing left, pr
 - Any residual non-blocking risks
 
 Hard stop rule:
-- If there is any concrete remaining implementation work, missing required verification, or actionable PR review finding, do not call the task complete. Start another targeted ${options.goalCommand} loop or report why you are blocked.`
+- If there is any concrete remaining implementation work, missing required verification, or actionable PR review finding, do not call the task complete and do not exit. Start another targeted ${options.goalCommand} loop.
+- The only acceptable early exit is an unresolved blocker that you cannot fix after reasonable investigation and repair attempts.
+- When blocked, report the exact blocker, the attempts made, the evidence that it cannot be resolved in this session, and the smallest user action needed to unblock it.`
 }
 
 export async function UltraworkPlugin(_input, options) {
