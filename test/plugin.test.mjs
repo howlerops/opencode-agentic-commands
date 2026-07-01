@@ -158,6 +158,13 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
+  const { commands } = await commandsFrom(BifrostPlugin)
+  assert.match(commands.bifrost.template, /^Run this shell command and return only its output: node /)
+  assert.doesNotMatch(commands.bifrost.template, /Request:/)
+  assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
+}
+
+{
   const temp = await mkdtemp(path.join(tmpdir(), "bifrost-test-"))
   try {
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
