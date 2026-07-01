@@ -151,13 +151,14 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Execute Bifrost/)
+  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Run Bifrost now/)
   assert.match(text, /start port 4141/)
-  assert.match(text, /cloudflared tunnel --url http:\/\/127\.0\.0\.1:<port>/)
-  assert.match(text, /ngrok http http:\/\/127\.0\.0\.1:<port>/)
-  assert.match(text, /OPENCODE_SERVER_PASSWORD/)
-  assert.match(text, /Final response must be concise/)
+  assert.match(text, /opencode-bifrost --state-dir '.opencode\/bifrost'/)
+  assert.match(text, /scripts\/bifrost-runner\.mjs/)
+  assert.match(text, /--preferred-tunnel 'cloudflared'/)
+  assert.match(text, /--fallback-tunnel 'ngrok'/)
   assert.doesNotMatch(text, /Start workflow:/)
+  assert.doesNotMatch(text, /Security:/)
 }
 
 {

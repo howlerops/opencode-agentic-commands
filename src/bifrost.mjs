@@ -4,7 +4,10 @@ import { closeSync, openSync } from "node:fs"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { createServer } from "node:net"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
+
+const BIFROST_RUNNER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs")
 
 const DEFAULT_OPTIONS = {
   commandName: "bifrost",
@@ -21,31 +24,17 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  return `Execute Bifrost for this OpenCode workspace now.
+  return `Run Bifrost now. Do not print this instruction back to the user.
 
 Request:
 $ARGUMENTS
 
-Mode:
-- Default to start when the request is empty.
-- Use status for "status".
-- Use stop for "stop".
+Execute exactly this shell command, then return its output concisely:
 
-Run the workflow with shell tools instead of printing this prompt back to the user:
-- State directory: ${options.stateDir}
-- Host: ${options.defaultHost}
-- Preferred tunnel: ${options.preferredTunnel}
-- Fallback tunnel: ${options.fallbackTunnel}
-- For start: reuse active Bifrost state when valid; otherwise choose an available port, ensure a non-empty OPENCODE_SERVER_PASSWORD or generated temporary password, start \`opencode web --hostname ${options.defaultHost} --port <port>\`, then start \`${options.preferredTunnel} tunnel --url http://127.0.0.1:<port>\` or \`${options.fallbackTunnel} http http://127.0.0.1:<port>\`.
-- For status: report state file, local URL, public URL, password source/value if known, PIDs, logs, and stale-state concerns.
-- For stop: stop only Bifrost-managed PIDs from state and remove stale state.
+\`opencode-bifrost --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} -- $ARGUMENTS\`
 
-Security:
-- Never expose a server without a password.
-- Never bind to 0.0.0.0 for a public tunnel unless explicitly requested.
-- Do not commit state, logs, tunnel URLs, or passwords.
-
-Final response must be concise and operational: local URL, public URL, password, attach command, logs, PIDs, and /bifrost stop when running; status details for status; cleanup details for stop.`
+If opencode-bifrost is not on PATH in this local checkout, run:
+\`node ${shellQuote(BIFROST_RUNNER)} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} -- $ARGUMENTS\``
 }
 
 function sleep(ms) {

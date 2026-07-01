@@ -5,6 +5,9 @@
   "type": "module",
   "license": "MIT",
   "main": "./src/index.mjs",
+  "bin": {
+    "opencode-bifrost": "./scripts/bifrost-runner.mjs"
+  },
   "exports": {
     ".": "./src/index.mjs",
     "./tyr": "./src/tyr.mjs",
