@@ -67,7 +67,7 @@ function shouldFallbackModel(model, options) {
   return options.prefixes.some((prefix) => model.startsWith(prefix))
 }
 
-export function applyModelFallbackConfig(opencodeConfig, options = {}) {
+function applyModelFallbackConfig(opencodeConfig, options = {}) {
   const fallback = normalizeModelFallbackOptions(options)
   if (!fallback.enabled || !opencodeConfig.agent) return
 
@@ -86,7 +86,7 @@ function setMcp(config, name, value, overwrite) {
   config.mcp[name] = value
 }
 
-export function applyMemoryConfig(opencodeConfig, options = {}) {
+function applyMemoryConfig(opencodeConfig, options = {}) {
   const memory = normalizeMemoryOptions(options)
 
   if (memory.agentdb.enabled) {

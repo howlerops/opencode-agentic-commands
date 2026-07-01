@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin, applyModelFallbackConfig } from "../src/index.mjs"
+import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -32,7 +32,8 @@ async function expands(plugin, slash, expected, options) {
       current: { model: "openai/gpt-5.5" },
     },
   }
-  applyModelFallbackConfig(config)
+  const hooks = await AgenticCommandsPlugin({}, {})
+  await hooks.config(config)
   assert.equal(config.agent.reviewer.model, "openai/gpt-5.5")
   assert.equal(config.agent.builder.model, "openai/gpt-5.5")
   assert.equal(config.agent.current.model, "openai/gpt-5.5")
@@ -45,7 +46,8 @@ async function expands(plugin, slash, expected, options) {
       reviewer: { model: "anthropic/claude-3-opus-20240229" },
     },
   }
-  applyModelFallbackConfig(config, { enabled: false })
+  const hooks = await AgenticCommandsPlugin({}, { modelFallback: { enabled: false } })
+  await hooks.config(config)
   assert.equal(config.agent.reviewer.model, "anthropic/claude-3-opus-20240229")
 }
 
