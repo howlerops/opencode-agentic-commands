@@ -36,6 +36,19 @@ function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`
 }
 
+function trimSlash(value) {
+  return String(value || "").replace(/\/$/, "")
+}
+
+function encodeRoutePath(value) {
+  return String(value || "")
+    .replace(/^\/+/, "")
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join("/")
+}
+
 function workspaceDirectory(pluginInput = {}) {
   return pluginInput.directory || pluginInput.project?.root || pluginInput.project?.directory || process.cwd()
 }
@@ -153,11 +166,62 @@ async function waitForTunnelUrl(logPath, timeoutMs) {
   return ""
 }
 
-function statusText(stateDir, state) {
+function authHeader(state) {
+  const username = state.username || "opencode"
+  if (!state.password) return {}
+  return { Authorization: `Basic ${Buffer.from(`${username}:${state.password}`).toString("base64")}` }
+}
+
+function sessionPath(session) {
+  return encodeRoutePath(session.path || session.directory || "")
+}
+
+function sessionUrl(baseUrl, session) {
+  const dir = sessionPath(session)
+  if (!baseUrl || !dir || !session.id) return ""
+  return `${trimSlash(baseUrl)}/${dir}/session/${encodeURIComponent(session.id)}`
+}
+
+async function sessionLinks(state, limit = 3) {
+  if (!state?.localUrl) return []
+  try {
+    const response = await fetch(`${trimSlash(state.localUrl)}/session`, { headers: authHeader(state) })
+    if (!response.ok) return []
+    const sessions = await response.json()
+    if (!Array.isArray(sessions)) return []
+    return sessions
+      .filter((session) => session.id && sessionPath(session))
+      .sort((a, b) => Number(b.time?.updated || 0) - Number(a.time?.updated || 0))
+      .slice(0, limit)
+      .map((session) => ({
+        id: session.id,
+        title: session.title || session.slug || session.id,
+        directory: session.directory || session.path || "unknown",
+        url: sessionUrl(state.publicUrl || state.localUrl, session),
+      }))
+      .filter((session) => session.url)
+  } catch {
+    return []
+  }
+}
+
+function formatSessionLinks(links) {
+  if (!links.length) return "Session links: unavailable"
+  const current = links[0]
+  const recent = links.map((session, index) => `${index + 1}. ${session.title} (${session.directory})\n   ${session.url}`).join("\n")
+  return `Current session URL: ${current.url}
+Current session title: ${current.title}
+
+Recent session URLs:
+${recent}`
+}
+
+async function statusText(stateDir, state) {
   if (!state) return `Bifrost status: no managed portal state found.\nState directory: ${stateDir}`
   const webAlive = pidAlive(state.webPid)
   const tunnelAlive = pidAlive(state.tunnelPid)
   const username = state.username || "opencode"
+  const links = webAlive ? await sessionLinks(state) : []
   return `Bifrost status: ${webAlive && tunnelAlive ? "running" : "partial or stale"}
 
 Open: ${state.publicUrl || state.localUrl || "unknown"}
@@ -165,6 +229,8 @@ Username: ${username}
 Password: ${state.password || "unknown"}
 
 Copy login: url=${state.publicUrl || state.localUrl || "unknown"} username=${username} password=${state.password || "unknown"}
+
+${formatSessionLinks(links)}
 
 Local URL: ${state.localUrl || "unknown"}
 Public URL: ${state.publicUrl || "unknown"}
@@ -234,10 +300,12 @@ async function startBifrost(pluginInput, config, request) {
   if (!publicUrl) {
     return `Bifrost portal partially started: OpenCode Web is running, but no public tunnel URL was detected yet.
 
-${statusText(stateDir, state)}
+${await statusText(stateDir, state)}
 
 Check tunnel log: ${tunnelLog}`
   }
+
+  const links = await sessionLinks(state)
 
   return `Bifrost portal started.
 
@@ -247,6 +315,9 @@ Username: ${username}
 Password: ${password}
 Password source: ${passwordSource}
 Copy login: url=${publicUrl} username=${username} password=${password}
+
+${formatSessionLinks(links)}
+
 Attach: opencode attach ${localUrl}
 Status: /bifrost status
 Stop: /bifrost stop

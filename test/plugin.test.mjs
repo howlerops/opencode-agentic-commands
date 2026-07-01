@@ -205,6 +205,7 @@ async function expands(plugin, slash, expected, options) {
     assert.match(output.parts[0].text, /Username: opencode/)
     assert.match(output.parts[0].text, /Password: bifrost-test-password/)
     assert.match(output.parts[0].text, /Copy login: url=https:\/\/example\.trycloudflare\.com username=opencode password=bifrost-test-password/)
+    assert.match(output.parts[0].text, /Session links: unavailable/)
   } finally {
     process.env.HOME = originalHome
     await rm(temp, { recursive: true, force: true })
