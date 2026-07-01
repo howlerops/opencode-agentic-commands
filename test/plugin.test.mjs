@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { AutoagentPlugin, AutoresearchPlugin, GoalPlugin, ThanosPlugin, UltraplanPlugin, UltrareviewPlugin, UltraworkPlugin } from "../src/index.mjs"
+import AgenticCommandsPlugin, { EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -18,9 +18,9 @@ async function expands(plugin, slash, expected, options) {
 
 {
   const { commands } = await commandsFrom(AgenticCommandsPlugin, {
-    jarvis: { baroModel: "openai/gpt-5.3-codex-spark" },
+    tyr: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
-  assert.deepEqual(Object.keys(commands).sort(), ["banner", "fury", "jarvis", "stark", "strange", "thanos", "watcher"])
+  assert.deepEqual(Object.keys(commands).sort(), ["eitri", "hugin", "munin", "polaris", "skuld", "tyr", "vidar"])
 }
 
 {
@@ -57,12 +57,12 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(GoalPlugin, "/jarvis add auth", /baro --llm opencode -m openai\/gpt-5\.3-codex-spark/)
+  const text = await expands(TyrPlugin, "/tyr add auth", /baro --llm opencode -m openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /add auth/)
 }
 
 {
-  const text = await expands(AutoresearchPlugin, "/banner improve bpb", /uv run train\.py/)
+  const text = await expands(MuninPlugin, "/munin improve bpb", /uv run train\.py/)
   assert.match(text, /val_bpb/)
   assert.match(text, /improve bpb/)
   assert.match(text, /AgentDB MCP\/tools/)
@@ -70,20 +70,13 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(AutoagentPlugin, "/fury create triage workflow", /COMPLETION_MODEL=openai\/gpt-5\.3-codex-spark/)
+  const text = await expands(EitriPlugin, "/eitri create triage workflow", /COMPLETION_MODEL=openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /create triage workflow/)
 }
 
 {
-  const { hooks } = await commandsFrom(AutoagentPlugin)
-  const output = { parts: [{ type: "text", text: "/autoagent create old command" }] }
-  await hooks["chat.message"]({}, output)
-  assert.equal(output.parts[0].text, "/autoagent create old command")
-}
-
-{
-  const text = await expands(UltraworkPlugin, "/stark ship payments", /repeatedly execute goal-sized implementation loops/)
-  assert.match(text, /\/jarvis ship payments/)
+  const text = await expands(VidarPlugin, "/vidar ship payments", /repeatedly execute goal-sized implementation loops/)
+  assert.match(text, /\/tyr ship payments/)
   assert.match(text, /PR-review repair loops/)
   assert.match(text, /Maximum parallel subagents: 4/)
   assert.match(text, /critic confirms no remaining required work/)
@@ -97,7 +90,7 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(UltraplanPlugin, "/strange ship payments", /Create an ultraplan/)
+  const text = await expands(HuginPlugin, "/hugin ship payments", /Create a Hugin anchor plan/)
   assert.match(text, /ship payments/)
   assert.match(text, /Story DAG/)
   assert.match(text, /Maximum parallel subagents to assume: 4/)
@@ -109,20 +102,20 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(UltrareviewPlugin, "/watcher current diff", /Run an ultrareview/)
+  const text = await expands(SkuldPlugin, "/skuld current diff", /Run a Skuld review/)
   assert.match(text, /current diff/)
   assert.match(text, /Review loop ledger/)
   assert.match(text, /Maximum parallel review subagents: 4/)
 }
 
 {
-  const text = await expands(ThanosPlugin, "/thanos ship the full platform", /Run this task in Thanos mode/)
+  const text = await expands(PolarisPlugin, "/polaris ship the full platform", /Run this task in Polaris mode/)
   assert.match(text, /ship the full platform/)
-  assert.match(text, /\/strange/)
-  assert.match(text, /\/fury/)
-  assert.match(text, /\/banner/)
-  assert.match(text, /\/stark/)
-  assert.match(text, /\/watcher/)
+  assert.match(text, /\/hugin/)
+  assert.match(text, /\/eitri/)
+  assert.match(text, /\/munin/)
+  assert.match(text, /\/vidar/)
+  assert.match(text, /\/skuld/)
   assert.match(text, /Do not call the task complete until planning, implementation, measurable outcome checks, and final review all find no remaining required work/)
 }
 

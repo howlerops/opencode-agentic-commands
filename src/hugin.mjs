@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "strange",
+  commandName: "hugin",
   agent: "plan",
   maxParallelSubagents: 4,
   outputArtifact: "conversation plan; create a repo file only when the user asks",
@@ -12,8 +12,8 @@ function normalizeOptions(options = {}) {
   return { ...DEFAULT_OPTIONS, ...options }
 }
 
-function ultraplanTemplate(options) {
-  return `Create an ultraplan for this goal before implementation. Do not edit code unless the user explicitly asks you to execute the plan.
+function huginTemplate(options) {
+  return `Create a Hugin anchor plan for this goal before implementation. Do not edit code unless the user explicitly asks you to execute the plan.
 
 Goal:
 $ARGUMENTS
@@ -22,7 +22,7 @@ Output artifact:
 - ${options.outputArtifact}.
 
 Planning principles:
-- Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /jarvis or /stark safely.
+- Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /tyr or /vidar safely.
 - Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
 - Build a context research dossier with file references and evidence. Separate facts observed in the repo from assumptions, inferences, and open questions.
 - Optional memory: if AgentDB MCP/tools, Agent Wisdom, or the agentdb CLI are already available, use them to recall prior successful patterns, critiques, and skill lessons. If unavailable, skip them quietly and continue from repo sources; optional memory is not a blocker and should not create noisy failure narration.
@@ -54,12 +54,12 @@ Final response:
 - Present the approved plan only after the verification pass.
 - Include unresolved questions only if they block correct implementation.
 - Make the plan self-contained enough that a fresh worker can execute it without repeating discovery.
-- End with the recommended first execution command, usually /jarvis or /stark with the highest-priority story or full goal.`
+- End with the recommended first execution command, usually /tyr or /vidar with the highest-priority story or full goal.`
 }
 
-export async function UltraplanPlugin(_input, options) {
+export async function HuginPlugin(_input, options) {
   const config = normalizeOptions(options)
-  const template = ultraplanTemplate(config)
+  const template = huginTemplate(config)
   const commandNames = [config.commandName]
 
   return {
@@ -85,4 +85,4 @@ export async function UltraplanPlugin(_input, options) {
   }
 }
 
-export default UltraplanPlugin
+export default HuginPlugin

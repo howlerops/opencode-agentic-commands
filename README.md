@@ -1,20 +1,24 @@
 # opencode-agentic-commands
 
-OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
+Agentic slash commands for OpenCode and Pi. The package adds a compact command suite for planning, execution, research, agent creation, persistent work loops, review, and full end-to-end orchestration.
 
-- `/jarvis` - baro-style end-to-end repo execution with architecture, story DAG, critic loop, and final verification.
-- `/banner` - karpathy/autoresearch-style experiment loop with baseline, metric tracking, keep/discard decisions, and an experiment ledger.
-- `/fury` - AutoAgent-style natural-language agent/workflow creation using opencode-native artifacts.
-- `/stark` - repeated `/jarvis` implementation loops plus PR-review repair loops until a critic finds nothing left.
-- `/strange` - anchor planning with extensive context research, story DAGs, parallel lanes, risks, and review gates before implementation.
-- `/watcher` - repeated PR-style review and repair loops until no actionable findings remain.
-- `/thanos` - top-level E2E orchestrator that composes `/strange`, `/jarvis`, `/fury`, `/banner`, `/stark`, and `/watcher`.
+The command names use a spelling-aware Norse/navigation theme so they are short, distinct, and less likely to collide with common dev tooling.
 
-For Pi, the package exposes all seven commands as Pi extensions and prompt templates.
+## Command Map
 
-## Install
+| Command | Role | Use When |
+| --- | --- | --- |
+| `/hugin` | Plan | You need deep context research, a dependency-aware plan, risks, verification, and review gates before editing. |
+| `/tyr` | Execute | You want one goal implemented end to end with architecture, story breakdown, verification, critic repair, and summary. |
+| `/munin` | Research | You need an experiment loop with baseline, hypothesis, metric, keep/discard decisions, and a ledger. |
+| `/eitri` | Create | You want opencode-native agents, workflows, commands, skills, or tools derived from natural language. |
+| `/vidar` | Persist | You want repeated `/tyr` implementation loops plus review repair loops until the work is complete. |
+| `/skuld` | Review | You want PR-style review, targeted repair, re-verification, and repeated review until clean. |
+| `/polaris` | Orchestrate | You want the whole flow: plan, create agents if needed, research, implement, review, and repair. |
 
-### Local path
+## Quick Start
+
+Install from a local checkout in `~/.config/opencode/opencode.json`:
 
 ```json
 {
@@ -25,86 +29,166 @@ For Pi, the package exposes all seven commands as Pi extensions and prompt templ
 }
 ```
 
-### GitHub
+Restart OpenCode, then run:
 
-After pushing this repo to GitHub:
+```text
+/hugin Plan the checkout redesign
+/tyr Add JWT authentication with role-based access control
+/munin Improve command prompt quality with before and after smoke checks
+/eitri Create a focused migration-review agent
+/vidar Finish the billing integration until review is clean
+/skuld current diff
+/polaris Ship the onboarding workflow end to end
+```
+
+## Install From GitHub
 
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    ["github:YOUR_USER/opencode-agentic-commands", {}]
+    ["github:howlerops/opencode-agentic-commands", {}]
   ]
 }
 ```
 
-### npm
+OpenCode loads plugin config at startup, so quit and restart after changing plugin settings.
+
+## Install From npm
 
 After publishing to npm:
 
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "plugin": [
     ["opencode-agentic-commands", {}]
   ]
 }
 ```
 
-Restart opencode after changing plugin config.
+## Pi Support
 
-## Install For Pi
+The package includes a Pi extension and matching prompt templates.
 
-Pi loads this repo as a Pi package through the `pi.extensions` and `pi.prompts` manifests in `package.json`.
-
-The Pi extension registers these slash commands directly:
-
-- `/jarvis`
-- `/banner`
-- `/fury`
-- `/stark`
-- `/strange`
-- `/watcher`
-- `/thanos`
-
-The prompt templates in `pi/prompts/` provide static fallbacks for the same command names and make the workflows browsable/configurable as plain Markdown.
-
-### Local path
+Install locally:
 
 ```bash
 pi install /Users/jacob_1/opencode-agentic-commands
 ```
 
-Then restart Pi or run `/reload`, and use:
-
-```text
-/jarvis Add JWT authentication with role-based access control
-/stark Finish the checkout flow until review is clean
-/watcher current diff
-/thanos Ship the billing integration end to end
-```
-
-### GitHub
-
-After pushing this repo to GitHub:
+Install from GitHub:
 
 ```bash
-pi install git:github.com/YOUR_USER/opencode-agentic-commands
+pi install git:github.com/howlerops/opencode-agentic-commands
 ```
 
-### npm
-
-After publishing to npm:
+Install from npm after publishing:
 
 ```bash
 pi install npm:opencode-agentic-commands
 ```
 
-Pi extension commands are loaded from `pi/extensions/agentic-commands.js`. Prompt templates are static Markdown. To change prompt defaults, edit files in `pi/prompts/` or create project-local `.pi/prompts/<command>.md` files that override them.
+Pi loads commands from `pi/extensions/agentic-commands.js` and prompt templates from `pi/prompts/`.
 
-### Optional AgentDB Memory
+## Default Config
 
-Memory is explicit opt-in config, not install/setup behavior. By default this package does not install, start, or require AgentDB or Agent Wisdom.
+All options are optional. This block shows the defaults and the new command keys.
 
-For OpenCode, enable memory by adding `memory` options to the plugin config:
+```json
+{
+  "plugin": [
+    [
+      "opencode-agentic-commands",
+      {
+        "hugin": {
+          "maxParallelSubagents": 4,
+          "outputArtifact": "conversation plan; create a repo file only when the user asks",
+          "verificationStandard": "plan is reviewed for feasibility, dependency order, risks, and test coverage before implementation starts"
+        },
+        "tyr": {
+          "baroBackend": "opencode",
+          "baroModel": "openai/gpt-5.3-codex-spark",
+          "baroExtraArgs": ""
+        },
+        "munin": {
+          "programFile": "program.md",
+          "mutableFiles": ["train.py"],
+          "protectedFiles": ["prepare.py"],
+          "setupCommand": "uv sync && uv run prepare.py",
+          "experimentCommand": "uv run train.py",
+          "metricName": "val_bpb",
+          "metricDirection": "lower",
+          "timeBudget": "5 minutes per experiment",
+          "maxIterations": "until user budget/time limit or diminishing returns"
+        },
+        "eitri": {
+          "defaultMode": "opencode-native",
+          "completionModel": "openai/gpt-5.3-codex-spark",
+          "apiBaseUrl": "",
+          "containerName": "deepresearch",
+          "port": 12346,
+          "gitClone": true,
+          "testPullName": "autoagent_mirror",
+          "allowToolCreation": true,
+          "allowWorkflowCreation": true,
+          "outputScope": "prefer project .opencode artifacts; use global artifacts only when explicitly requested"
+        },
+        "vidar": {
+          "goalCommand": "/tyr",
+          "criticAgent": "code-reviewer",
+          "maxGoalLoops": 20,
+          "maxReviewLoops": 10,
+          "preferSubagents": true,
+          "maxParallelSubagents": 4,
+          "completionStandard": "critic confirms no remaining required work, no unresolved risks, and no PR review findings"
+        },
+        "skuld": {
+          "reviewerAgent": "code-reviewer",
+          "goalCommand": "/tyr",
+          "maxReviewLoops": 10,
+          "preferSubagents": true,
+          "maxParallelSubagents": 4,
+          "completionStandard": "review finds no actionable bugs, regressions, missing required tests, or unresolved risks"
+        },
+        "polaris": {
+          "planCommand": "/hugin",
+          "goalCommand": "/tyr",
+          "agentCommand": "/eitri",
+          "researchCommand": "/munin",
+          "workCommand": "/vidar",
+          "reviewCommand": "/skuld",
+          "maxOrchestrationLoops": 20,
+          "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
+        }
+      }
+    ]
+  ]
+}
+```
+
+## Individual Entrypoints
+
+Use subpath exports when you only want one command.
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    ["opencode-agentic-commands/hugin", { "maxParallelSubagents": 4 }],
+    ["opencode-agentic-commands/tyr", { "baroModel": "openai/gpt-5.3-codex-spark" }],
+    ["opencode-agentic-commands/munin", { "experimentCommand": "uv run train.py" }],
+    ["opencode-agentic-commands/eitri", { "completionModel": "openai/gpt-5.3-codex-spark" }],
+    ["opencode-agentic-commands/vidar", { "maxGoalLoops": 20 }],
+    ["opencode-agentic-commands/skuld", { "maxReviewLoops": 10 }],
+    ["opencode-agentic-commands/polaris", { "maxOrchestrationLoops": 20 }]
+  ]
+}
+```
+
+## Optional Memory
+
+Memory is explicit opt-in config. This package does not install, start, or require AgentDB or Agent Wisdom by default.
 
 ```json
 {
@@ -133,141 +217,31 @@ For OpenCode, enable memory by adding `memory` options to the plugin config:
 
 When `memory.agentdb.enabled` is true, the plugin adds an OpenCode MCP entry using `npx -y agentdb@latest mcp start`. Existing `mcp.agentdb` entries are preserved unless `memory.agentdb.overwrite` is true.
 
-Commands that do context research (`/strange`, `/stark`, `/banner`) should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, the commands should skip them quietly and continue from repo sources. Optional memory must not become a blocker or create repeated "unavailable" narration.
+Commands that do context research, especially `/hugin`, `/vidar`, `/munin`, and `/polaris`, should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, commands skip them quietly and continue from repo sources.
 
-Pi extension docs explicitly warn against starting long-lived resources in extension factory startup, so the Pi package never auto-starts AgentDB. Start it through your harness MCP config, a project-local extension, or an explicit user command when needed.
+Pi package startup never auto-starts long-lived memory resources. Start those through your harness MCP config, a project-local extension, or an explicit user command when needed.
 
-### Pi Package Manifest
+## Design Notes
 
-```json
-{
-  "pi": {
-    "extensions": ["./pi/extensions"],
-    "prompts": ["./pi/prompts"]
-  }
-}
-```
-
-## Default Config
-
-```json
-{
-  "plugin": [
-    [
-      "opencode-agentic-commands",
-      {
-        "jarvis": {
-          "baroBackend": "opencode",
-          "baroModel": "openai/gpt-5.3-codex-spark",
-          "baroExtraArgs": ""
-        },
-        "banner": {
-          "programFile": "program.md",
-          "mutableFiles": ["train.py"],
-          "protectedFiles": ["prepare.py"],
-          "setupCommand": "uv sync && uv run prepare.py",
-          "experimentCommand": "uv run train.py",
-          "metricName": "val_bpb",
-          "metricDirection": "lower",
-          "timeBudget": "5 minutes per experiment",
-          "maxIterations": "until user budget/time limit or diminishing returns"
-        },
-        "fury": {
-          "defaultMode": "opencode-native",
-          "completionModel": "openai/gpt-5.3-codex-spark",
-          "apiBaseUrl": "",
-          "containerName": "deepresearch",
-          "port": 12346,
-          "gitClone": true,
-          "testPullName": "autoagent_mirror",
-          "allowToolCreation": true,
-          "allowWorkflowCreation": true,
-          "outputScope": "prefer project .opencode artifacts; use global artifacts only when explicitly requested"
-        },
-        "stark": {
-          "goalCommand": "/jarvis",
-          "criticAgent": "code-reviewer",
-          "maxGoalLoops": 20,
-          "maxReviewLoops": 10,
-          "preferSubagents": true,
-          "maxParallelSubagents": 4,
-          "completionStandard": "critic confirms no remaining required work, no unresolved risks, and no PR review findings"
-        },
-        "strange": {
-          "maxParallelSubagents": 4,
-          "outputArtifact": "conversation plan; create a repo file only when the user asks",
-          "verificationStandard": "plan is reviewed for feasibility, dependency order, risks, and test coverage before implementation starts"
-        },
-        "watcher": {
-          "reviewerAgent": "code-reviewer",
-          "goalCommand": "/jarvis",
-          "maxReviewLoops": 10,
-          "preferSubagents": true,
-          "maxParallelSubagents": 4,
-          "completionStandard": "review finds no actionable bugs, regressions, missing required tests, or unresolved risks"
-        },
-        "thanos": {
-          "planCommand": "/strange",
-          "goalCommand": "/jarvis",
-          "agentCommand": "/fury",
-          "researchCommand": "/banner",
-          "workCommand": "/stark",
-          "reviewCommand": "/watcher",
-          "maxOrchestrationLoops": 20,
-          "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
-        },
-        "memory": {
-          "agentdb": {
-            "enabled": false,
-            "dbPath": ""
-          },
-          "agentWisdom": {
-            "enabled": false,
-            "name": "agent-wisdom",
-            "command": [],
-            "root": "",
-            "dbPath": ""
-          }
-        }
-      }
-    ]
-  ]
-}
-```
-
-## Individual Entrypoints
-
-You can install only one command by using subpath exports:
-
-```json
-{
-  "plugin": [
-    ["opencode-agentic-commands/jarvis", { "baroModel": "openai/gpt-5.3-codex-spark" }],
-    ["opencode-agentic-commands/banner", { "experimentCommand": "uv run train.py" }],
-    ["opencode-agentic-commands/fury", { "completionModel": "openai/gpt-5.3-codex-spark" }],
-    ["opencode-agentic-commands/stark", { "maxGoalLoops": 20 }],
-    ["opencode-agentic-commands/strange", { "maxParallelSubagents": 4 }],
-    ["opencode-agentic-commands/watcher", { "maxReviewLoops": 10 }],
-    ["opencode-agentic-commands/thanos", { "maxOrchestrationLoops": 20 }]
-  ]
-}
-```
-
-## Notes
-
-- Commands appear in the OpenCode TUI slash-command list after restart.
-- No custom TUI screen is included; the TUI already exposes custom slash commands and descriptions.
-- `/jarvis` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
-- `/stark` composes `/jarvis` loops with critic checks and a final PR-review loop. It starts with a context research dossier and anchor plan, keeps that plan current through every loop, and should only stop before completion for a concrete blocker it cannot resolve.
-- `/strange` is intentionally non-mutating by default: it performs extensive context research, produces a self-contained anchor plan, reviews the plan, and recommends the first execution command.
-- `/watcher` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
-- `/banner` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention. For commands, skills, extensions, and prompts, it should define repeatable outcome tests before editing: expansion invariants, package load checks, command registration checks, prompt regression assertions, and before/after smoke comparisons where feasible.
-- `/fury` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
-- `/thanos` is the highest-level orchestrator. Use it when the task should be carried from context research and planning through agent/workflow design, measurable optimization, implementation, final review, and repair.
-- In Pi, `pi/extensions/agentic-commands.js` registers all seven commands and `pi/prompts/` ships matching prompt templates.
+| Name | Source | Why It Fits |
+| --- | --- | --- |
+| Hugin | Norse thought raven | Plans from broad context and turns facts into structure. |
+| Tyr | Norse god associated with decisive action | Executes one goal with discipline. |
+| Munin | Norse memory raven | Researches, compares, records, and learns. |
+| Eitri | Norse smith | Crafts agents, workflows, and tools. |
+| Vidar | Norse figure associated with resolve | Keeps working until the task is actually complete. |
+| Skuld | Norse Norn tied to what is owed or must become | Reviews consequences, risks, and remaining obligations. |
+| Polaris | North Star | Guides the whole journey end to end. |
 
 ## Test
 
 ```bash
 npm test
+```
+
+Additional release checks used for this package:
+
+```bash
+node --check pi/extensions/agentic-commands.js
+npm pack --dry-run
 ```

@@ -1,9 +1,9 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "stark",
+  commandName: "vidar",
   agent: "build",
-  goalCommand: "/jarvis",
+  goalCommand: "/tyr",
   criticAgent: "code-reviewer",
   maxGoalLoops: 20,
   maxReviewLoops: 10,
@@ -16,8 +16,8 @@ function normalizeOptions(options = {}) {
   return { ...DEFAULT_OPTIONS, ...options }
 }
 
-function ultraworkTemplate(options) {
-  return `Run this task in ultrawork mode: repeatedly execute goal-sized implementation loops until the work is fully realized, then run PR-review repair loops until there are no review findings left.
+function vidarTemplate(options) {
+  return `Run this task in Vidar mode: repeatedly execute goal-sized implementation loops until the work is fully realized, then run PR-review repair loops until there are no review findings left.
 
 Original goal:
 $ARGUMENTS
@@ -120,16 +120,16 @@ Hard stop rule:
 - When blocked, report the exact blocker, the attempts made, the evidence that it cannot be resolved in this session, and the smallest user action needed to unblock it.`
 }
 
-export async function UltraworkPlugin(_input, options) {
+export async function VidarPlugin(_input, options) {
   const config = normalizeOptions(options)
-  const template = ultraworkTemplate(config)
+  const template = vidarTemplate(config)
   const commandNames = [config.commandName]
 
   return {
     config(opencodeConfig) {
       opencodeConfig.command ||= {}
       opencodeConfig.command[config.commandName] = {
-        description: "Run repeated /jarvis implementation and PR-review repair loops until a critic finds nothing left.",
+        description: "Run repeated /tyr implementation and PR-review repair loops until a critic finds nothing left.",
         agent: config.agent,
         template,
       }
@@ -148,4 +148,4 @@ export async function UltraworkPlugin(_input, options) {
   }
 }
 
-export default UltraworkPlugin
+export default VidarPlugin

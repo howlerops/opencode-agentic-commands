@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "jarvis",
+  commandName: "tyr",
   agent: "build",
   baroBackend: "opencode",
   baroModel: "openai/gpt-5.3-codex-spark",
@@ -66,7 +66,7 @@ Use this process:
 Baro reference behavior to emulate: one goal becomes an architected plan, a dependency-aware story DAG, parallel execution where safe, critic/self-repair, final verification, and a PR-ready summary. Default baro delegation should use \`${command}\`; otherwise implement directly inside opencode.`
 }
 
-export async function GoalPlugin(_input, options) {
+export async function TyrPlugin(_input, options) {
   const config = normalizeOptions(options)
   const template = goalTemplate(config)
   const commandNames = [config.commandName]
@@ -94,4 +94,4 @@ export async function GoalPlugin(_input, options) {
   }
 }
 
-export default GoalPlugin
+export default TyrPlugin

@@ -2,14 +2,14 @@
 description: Orchestrate a task end to end with planning, agents, research, implementation, and review loops
 argument-hint: "<task>"
 ---
-Run this task in Thanos mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
+Run this task in Polaris mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
 
 Task:
 $ARGUMENTS
 
 Mission:
 - Own the task end to end. Do not stop at planning, a partial implementation, or a first review pass.
-- Use the existing command suite as orchestration phases: `/strange`, `/jarvis`, `/fury`, `/banner`, `/stark`, and `/watcher`.
+- Use the existing command suite as orchestration phases: `/hugin`, `/tyr`, `/eitri`, `/munin`, `/vidar`, and `/skuld`.
 - Completion standard: plan, implementation, research optimization, and review all agree there is no remaining required work.
 
 Phase 0: intake, memory, and scope
@@ -19,25 +19,25 @@ Phase 0: intake, memory, and scope
 - Build a context dossier and assumption ledger. Ask one concise question only if missing user input blocks a safe decision.
 
 Phase 1: anchor plan
-- Run `/strange` semantics for the full task.
+- Run `/hugin` semantics for the full task.
 - Produce a self-contained anchor plan with source map, architecture decisions, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
 - Keep this plan current through all later phases.
 
 Phase 2: orchestration design
 - Decide whether new or specialized agents, workflows, commands, skills, tools, or package artifacts are needed.
-- If yes, run `/fury` semantics to design and create the minimal scoped artifacts.
+- If yes, run `/eitri` semantics to design and create the minimal scoped artifacts.
 
 Phase 3: measurable optimization
-- If the task involves prompts, commands, skills, extensions, agents, experiments, model behavior, or quality improvements, run `/banner` semantics before and after changes.
+- If the task involves prompts, commands, skills, extensions, agents, experiments, model behavior, or quality improvements, run `/munin` semantics before and after changes.
 - Define outcome tests before editing: expansion invariants, package install/load checks, command registration checks, prompt regression assertions, benchmark/metric checks, and before/after smoke comparisons where feasible.
 
 Phase 4: implementation
-- Run `/stark` semantics to execute the anchor plan with repeated `/jarvis` loops.
+- Run `/vidar` semantics to execute the anchor plan with repeated `/tyr` loops.
 - Keep looping implementation, verification, critic review, and repair until no required work remains.
 - Only stop early for a concrete blocker that cannot be resolved with available tools/context after reasonable attempts.
 
 Phase 5: final review and repair
-- Run `/watcher` semantics against the final diff, branch, or described deliverable.
+- Run `/skuld` semantics against the final diff, branch, or described deliverable.
 - Repair every actionable finding, rerun relevant verification, then review again.
 - Repeat until review is clean or a genuine unresolved blocker remains.
 
@@ -48,7 +48,7 @@ Final report:
 - Work completed by phase.
 - Files/artifacts changed.
 - Outcome tests, verification commands, and results.
-- Final `/watcher` verdict.
+- Final `/skuld` verdict.
 - AgentDB/Agent Wisdom memory used or stored, if any.
 - Residual non-blocking risks.
 

@@ -1,14 +1,14 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "thanos",
+  commandName: "polaris",
   agent: "build",
-  planCommand: "/strange",
-  goalCommand: "/jarvis",
-  workCommand: "/stark",
-  reviewCommand: "/watcher",
-  researchCommand: "/banner",
-  agentCommand: "/fury",
+  planCommand: "/hugin",
+  goalCommand: "/tyr",
+  workCommand: "/vidar",
+  reviewCommand: "/skuld",
+  researchCommand: "/munin",
+  agentCommand: "/eitri",
   maxOrchestrationLoops: 20,
   completionStandard: "plan, implementation, research optimization, and review all agree there is no remaining required work",
 }
@@ -17,8 +17,8 @@ function normalizeOptions(options = {}) {
   return { ...DEFAULT_OPTIONS, ...options }
 }
 
-function thanosTemplate(options) {
-  return `Run this task in Thanos mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
+function polarisTemplate(options) {
+  return `Run this task in Polaris mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
 
 Task:
 $ARGUMENTS
@@ -80,9 +80,9 @@ Hard stop rule:
 - If anything remains, start the next targeted phase loop or report the exact unresolvable blocker.`
 }
 
-export async function ThanosPlugin(_input, options) {
+export async function PolarisPlugin(_input, options) {
   const config = normalizeOptions(options)
-  const template = thanosTemplate(config)
+  const template = polarisTemplate(config)
   const commandNames = [config.commandName]
 
   return {
@@ -108,4 +108,4 @@ export async function ThanosPlugin(_input, options) {
   }
 }
 
-export default ThanosPlugin
+export default PolarisPlugin

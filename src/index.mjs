@@ -1,19 +1,19 @@
-import { GoalPlugin } from "./jarvis.mjs"
-import { AutoresearchPlugin } from "./banner.mjs"
-import { AutoagentPlugin } from "./fury.mjs"
-import { UltraworkPlugin } from "./stark.mjs"
-import { UltraplanPlugin } from "./strange.mjs"
-import { UltrareviewPlugin } from "./watcher.mjs"
-import { ThanosPlugin } from "./thanos.mjs"
+import { TyrPlugin } from "./tyr.mjs"
+import { MuninPlugin } from "./munin.mjs"
+import { EitriPlugin } from "./eitri.mjs"
+import { VidarPlugin } from "./vidar.mjs"
+import { HuginPlugin } from "./hugin.mjs"
+import { SkuldPlugin } from "./skuld.mjs"
+import { PolarisPlugin } from "./polaris.mjs"
 
 const DEFAULT_OPTIONS = {
-  jarvis: {},
-  banner: {},
-  fury: {},
-  stark: {},
-  strange: {},
-  watcher: {},
-  thanos: {},
+  tyr: {},
+  munin: {},
+  eitri: {},
+  vidar: {},
+  hugin: {},
+  skuld: {},
+  polaris: {},
   memory: {},
 }
 
@@ -97,13 +97,13 @@ function chainHooks(hooksList, hookName) {
 export async function AgenticCommandsPlugin(input, options = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options }
   const hooksList = [
-    await GoalPlugin(input, config.jarvis),
-    await AutoresearchPlugin(input, config.banner),
-    await AutoagentPlugin(input, config.fury),
-    await UltraworkPlugin(input, config.stark),
-    await UltraplanPlugin(input, config.strange),
-    await UltrareviewPlugin(input, config.watcher),
-    await ThanosPlugin(input, config.thanos),
+    await TyrPlugin(input, config.tyr),
+    await MuninPlugin(input, config.munin),
+    await EitriPlugin(input, config.eitri),
+    await VidarPlugin(input, config.vidar),
+    await HuginPlugin(input, config.hugin),
+    await SkuldPlugin(input, config.skuld),
+    await PolarisPlugin(input, config.polaris),
   ]
 
   return {
@@ -116,12 +116,12 @@ export async function AgenticCommandsPlugin(input, options = {}) {
   }
 }
 
-export { GoalPlugin } from "./jarvis.mjs"
-export { AutoresearchPlugin } from "./banner.mjs"
-export { AutoagentPlugin } from "./fury.mjs"
-export { UltraworkPlugin } from "./stark.mjs"
-export { UltraplanPlugin } from "./strange.mjs"
-export { UltrareviewPlugin } from "./watcher.mjs"
-export { ThanosPlugin } from "./thanos.mjs"
+export { TyrPlugin } from "./tyr.mjs"
+export { MuninPlugin } from "./munin.mjs"
+export { EitriPlugin } from "./eitri.mjs"
+export { VidarPlugin } from "./vidar.mjs"
+export { HuginPlugin } from "./hugin.mjs"
+export { SkuldPlugin } from "./skuld.mjs"
+export { PolarisPlugin } from "./polaris.mjs"
 
 export default AgenticCommandsPlugin

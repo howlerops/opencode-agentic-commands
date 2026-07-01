@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Agentic slash commands for OpenCode and Pi: plan, execute, research, create, persist, review, and orchestrate.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <title>opencode-agentic-commands</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080a10;
+        --panel: rgba(255, 255, 255, 0.07);
+        --panel-strong: rgba(255, 255, 255, 0.11);
+        --text: #f7f3e8;
+        --muted: #a9b0c3;
+        --line: rgba(255, 255, 255, 0.15);
+        --gold: #f7c873;
+        --cyan: #8fe3ff;
+        --green: #96f0c8;
+        --purple: #cdb3ff;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(143, 227, 255, 0.22), transparent 28rem),
+          radial-gradient(circle at 88% 18%, rgba(247, 200, 115, 0.2), transparent 24rem),
+          linear-gradient(135deg, #080a10 0%, #101624 48%, #070912 100%);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 28px 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+
+      .mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(247, 200, 115, 0.22), rgba(143, 227, 255, 0.18));
+        box-shadow: var(--shadow);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .nav-links a:hover {
+        color: var(--text);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 34px;
+        align-items: center;
+        padding: 76px 0 52px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 22px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--cyan);
+        background: rgba(143, 227, 255, 0.08);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(46px, 7vw, 88px);
+        line-height: 0.95;
+        letter-spacing: -0.07em;
+      }
+
+      .lead {
+        max-width: 680px;
+        margin: 24px 0 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 22px);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 32px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .button.primary {
+        border-color: rgba(247, 200, 115, 0.55);
+        background: linear-gradient(135deg, var(--gold), #ff9f6e);
+        color: #171006;
+      }
+
+      .terminal {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(4, 7, 12, 0.72);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .dots {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+
+      .dot:nth-child(1) { background: #ff6b6b; }
+      .dot:nth-child(2) { background: #ffd166; }
+      .dot:nth-child(3) { background: #63e6be; }
+
+      pre {
+        margin: 0;
+        padding: 22px;
+        color: #dce7ff;
+        white-space: pre-wrap;
+        font: 14px/1.7 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .prompt {
+        color: var(--green);
+      }
+
+      .comment {
+        color: #8290aa;
+      }
+
+      section {
+        padding: 48px 0;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 46px);
+        letter-spacing: -0.04em;
+      }
+
+      .section-head p {
+        max-width: 520px;
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        min-height: 210px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
+      }
+
+      .command {
+        color: var(--gold);
+        font: 700 18px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .role {
+        margin-top: 10px;
+        color: var(--text);
+        font-weight: 800;
+      }
+
+      .card p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+      }
+
+      .step {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel-strong);
+      }
+
+      .step b {
+        display: block;
+        color: var(--cyan);
+      }
+
+      .install {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.06);
+        overflow: hidden;
+      }
+
+      .panel h3 {
+        margin: 0;
+        padding: 18px 20px 0;
+      }
+
+      footer {
+        padding: 46px 0 58px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 980px) {
+        .hero,
+        .install {
+          grid-template-columns: 1fr;
+        }
+
+        .grid,
+        .flow {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .nav {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .nav-links {
+          flex-wrap: wrap;
+        }
+
+        .hero {
+          padding-top: 42px;
+        }
+
+        .grid,
+        .flow {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="#top" aria-label="opencode-agentic-commands home">
+          <span class="mark">*</span>
+          <span>opencode-agentic-commands</span>
+        </a>
+        <div class="nav-links">
+          <a href="#commands">Commands</a>
+          <a href="#flow">Flow</a>
+          <a href="#install">Install</a>
+          <a href="https://github.com/howlerops/opencode-agentic-commands">GitHub</a>
+        </div>
+      </nav>
+
+      <main id="top">
+        <section class="hero">
+          <div>
+            <div class="eyebrow">Norse names. North-star orchestration.</div>
+            <h1>Agentic command loops for OpenCode and Pi.</h1>
+            <p class="lead">A compact slash-command suite that plans, executes, researches, crafts agents, persists through implementation, reviews diffs, and orchestrates the whole delivery path.</p>
+            <div class="actions">
+              <a class="button primary" href="#install">Install</a>
+              <a class="button" href="#commands">Explore Commands</a>
+            </div>
+          </div>
+          <div class="terminal" aria-label="Command examples">
+            <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre><span class="comment"># plan first</span>
+<span class="prompt">/hugin</span> Design the billing migration
+
+<span class="comment"># execute one goal</span>
+<span class="prompt">/tyr</span> Add role-based JWT auth
+
+<span class="comment"># run the whole route</span>
+<span class="prompt">/polaris</span> Ship onboarding end to end</pre>
+          </div>
+        </section>
+
+        <section id="commands">
+          <div class="section-head">
+            <h2>Seven Commands</h2>
+            <p>Short, spellable names with distinct jobs. Use one command directly, or let Polaris coordinate the full suite.</p>
+          </div>
+          <div class="grid">
+            <article class="card"><div class="command">/hugin</div><div class="role">Plan</div><p>Deep context research, story DAGs, risk register, verification matrix, and review gates.</p></article>
+            <article class="card"><div class="command">/tyr</div><div class="role">Execute</div><p>One goal implemented end to end with architecture, verification, critic repair, and summary.</p></article>
+            <article class="card"><div class="command">/munin</div><div class="role">Research</div><p>Baseline, hypothesis, experiment, metric comparison, keep/discard decision, and ledger.</p></article>
+            <article class="card"><div class="command">/eitri</div><div class="role">Create</div><p>Craft opencode-native agents, workflows, commands, skills, or scoped tools from natural language.</p></article>
+            <article class="card"><div class="command">/vidar</div><div class="role">Persist</div><p>Repeat implementation and review repair loops until the task is complete or truly blocked.</p></article>
+            <article class="card"><div class="command">/skuld</div><div class="role">Review</div><p>PR-style findings, targeted fixes, re-verification, and repeated review until clean.</p></article>
+            <article class="card"><div class="command">/polaris</div><div class="role">Orchestrate</div><p>The north-star command: plan, create, research, implement, review, and repair.</p></article>
+          </div>
+        </section>
+
+        <section id="flow">
+          <div class="section-head">
+            <h2>Polaris Flow</h2>
+            <p>The full route keeps discovery, implementation, and review connected instead of treating them as separate one-shot prompts.</p>
+          </div>
+          <div class="flow">
+            <div class="step"><b>1. Intake</b>Scope, success criteria, constraints, and optional memory.</div>
+            <div class="step"><b>2. Hugin</b>Anchor plan with evidence and dependency order.</div>
+            <div class="step"><b>3. Eitri</b>Create agents or workflows only when needed.</div>
+            <div class="step"><b>4. Munin</b>Define outcome tests and compare improvements.</div>
+            <div class="step"><b>5. Vidar</b>Loop implementation with repeated Tyr passes.</div>
+            <div class="step"><b>6. Skuld</b>Review, repair, verify, and review again.</div>
+          </div>
+        </section>
+
+        <section id="install">
+          <div class="section-head">
+            <h2>Install</h2>
+            <p>Use it from a local checkout, GitHub, or npm. OpenCode requires a restart after plugin config changes.</p>
+          </div>
+          <div class="install">
+            <div class="panel">
+              <h3>OpenCode</h3>
+              <pre>{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    ["github:howlerops/opencode-agentic-commands", {}]
+  ]
+}</pre>
+            </div>
+            <div class="panel">
+              <h3>Pi</h3>
+              <pre>pi install git:github.com/howlerops/opencode-agentic-commands
+
+# then try
+/polaris Ship the feature end to end</pre>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        MIT licensed. Built for OpenCode plugin hooks and Pi extension prompts.
+      </footer>
+    </div>
+  </body>
+</html>

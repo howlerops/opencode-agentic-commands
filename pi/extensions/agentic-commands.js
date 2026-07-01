@@ -1,5 +1,5 @@
 const COMMANDS = {
-  jarvis: {
+  tyr: {
     description: "Run a repo goal end-to-end with a baro-style plan, story DAG, critic loop, and final verification.",
     render: (args) => `Run this goal end-to-end using a baro-inspired workflow in Pi.
 
@@ -41,7 +41,7 @@ Use this process:
 - Run the broadest feasible verification for this repo.
 - Summarize completed stories, files changed, verification commands, remaining risks, and PR-readiness.`,
   },
-  banner: {
+  munin: {
     description: "Run an autonomous research loop: baseline, hypothesize, edit, evaluate, keep/discard, and report.",
     render: (args) => `Run a Pi-native autoresearch loop inspired by karpathy/autoresearch.
 
@@ -83,7 +83,7 @@ Use this process:
 6. Final report
 - Report best result, full experiment ledger, final diff summary, exact commands run, artifacts/logs, and recommended next experiments.`,
   },
-  fury: {
+  eitri: {
     description: "Create or run AutoAgent-style Pi agents/workflows from natural language.",
     render: (args) => `Build or run a Pi-native AutoAgent-style workflow.
 
@@ -119,9 +119,9 @@ Use this process:
 6. Final report
 - Summarize created/modified Pi artifacts, agent roles, workflow graph, permissions, validation performed, and any manual setup still required.`,
   },
-  stark: {
+  vidar: {
     description: "Run repeated goal implementation and PR-review repair loops until only an unresolvable blocker remains or review is clean.",
-    render: (args) => `Run this task in ultrawork mode in Pi: repeatedly execute goal-sized implementation loops until the work is fully realized, then run PR-review repair loops until there are no review findings left.
+    render: (args) => `Run this task in Vidar mode in Pi: repeatedly execute goal-sized implementation loops until the work is fully realized, then run PR-review repair loops until there are no review findings left.
 
 Original goal:
 ${args}
@@ -144,7 +144,7 @@ Phase 0: context research and anchor plan
 - If AgentDB is available and the work produces a durable lesson, store the successful pattern, failure critique, or review finding after verification. Do not install or start long-lived AgentDB services from inside the work loop unless the user explicitly asks.
 
 Phase 1: implementation loop
-- Use /jarvis semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
+- Use /tyr semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
 - If work remains, start another targeted loop instead of exiting.
 
 Phase 2: critic-driven loops
@@ -162,14 +162,14 @@ Hard stop rule:
 - The only acceptable early exit is an unresolved blocker that you cannot fix after reasonable investigation and repair attempts.
 - When blocked, report the exact blocker, attempts made, evidence that it cannot be resolved in this session, and the smallest user action needed to unblock it.`,
   },
-  strange: {
+  hugin: {
     description: "Create a verified dependency-aware execution plan without editing code.",
-    render: (args) => `Create an ultraplan for this goal before implementation. Do not edit code unless explicitly asked to execute the plan.
+    render: (args) => `Create a Hugin anchor plan for this goal before implementation. Do not edit code unless explicitly asked to execute the plan.
 
 Goal:
 ${args}
 
-Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /jarvis or /stark safely.
+Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /tyr or /vidar safely.
 
 Planning principles:
 - Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
@@ -190,25 +190,25 @@ Plan structure:
 
 Run a separate review pass over the plan when possible, revise concrete flaws, then present the approved, self-contained plan and recommended first execution command.`,
   },
-  watcher: {
+  skuld: {
     description: "Review and repair a diff repeatedly until no actionable PR-review findings remain.",
-    render: (args) => `Run an ultrareview for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
+    render: (args) => `Run a Skuld review for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
 
 Review target:
 ${args}
 
 Focus on correctness bugs, regressions, missing tests, security, data loss, race conditions, compatibility breaks, performance hazards, and concrete maintainability risks. Present findings with severity, file/line where possible, failure mode, minimal fix, and verification needed. If actionable findings exist, repair them with a targeted implementation loop, re-run verification, and review again until clean.`,
   },
-  thanos: {
+  polaris: {
     description: "Orchestrate a task end to end with planning, agents, research, implementation, and review loops.",
-    render: (args) => `Run this task in Thanos mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
+    render: (args) => `Run this task in Polaris mode: use every agentic command in this package as a high-level end-to-end orchestrator, from context research through final review.
 
 Task:
 ${args}
 
 Mission:
 - Own the task end to end. Do not stop at planning, a partial implementation, or a first review pass.
-- Use the existing command suite as orchestration phases: /strange, /jarvis, /fury, /banner, /stark, and /watcher.
+- Use the existing command suite as orchestration phases: /hugin, /tyr, /eitri, /munin, /vidar, and /skuld.
 - Completion standard: plan, implementation, research optimization, and review all agree there is no remaining required work.
 
 Phase 0: intake, memory, and scope
@@ -218,25 +218,25 @@ Phase 0: intake, memory, and scope
 - Build a context dossier and assumption ledger. Ask one concise question only if missing user input blocks a safe decision.
 
 Phase 1: anchor plan
-- Run /strange semantics for the full task.
+- Run /hugin semantics for the full task.
 - Produce a self-contained anchor plan with source map, architecture decisions, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
 - Keep this plan current through all later phases.
 
 Phase 2: orchestration design
 - Decide whether new or specialized agents, workflows, commands, skills, tools, or package artifacts are needed.
-- If yes, run /fury semantics to design and create the minimal scoped artifacts.
+- If yes, run /eitri semantics to design and create the minimal scoped artifacts.
 
 Phase 3: measurable optimization
-- If the task involves prompts, commands, skills, extensions, agents, experiments, model behavior, or quality improvements, run /banner semantics before and after changes.
+- If the task involves prompts, commands, skills, extensions, agents, experiments, model behavior, or quality improvements, run /munin semantics before and after changes.
 - Define outcome tests before editing: expansion invariants, package install/load checks, command registration checks, prompt regression assertions, benchmark/metric checks, and before/after smoke comparisons where feasible.
 
 Phase 4: implementation
-- Run /stark semantics to execute the anchor plan with repeated /jarvis loops.
+- Run /vidar semantics to execute the anchor plan with repeated /tyr loops.
 - Keep looping implementation, verification, critic review, and repair until no required work remains.
 - Only stop early for a concrete blocker that cannot be resolved with available tools/context after reasonable attempts.
 
 Phase 5: final review and repair
-- Run /watcher semantics against the final diff, branch, or described deliverable.
+- Run /skuld semantics against the final diff, branch, or described deliverable.
 - Repair every actionable finding, rerun relevant verification, then review again.
 - Repeat until review is clean or a genuine unresolved blocker remains.
 
@@ -247,7 +247,7 @@ Final report:
 - Work completed by phase.
 - Files/artifacts changed.
 - Outcome tests, verification commands, and results.
-- Final /watcher verdict.
+- Final /skuld verdict.
 - AgentDB/Agent Wisdom memory used or stored, if any.
 - Residual non-blocking risks.
 

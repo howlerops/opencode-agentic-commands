@@ -1,10 +1,10 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "watcher",
+  commandName: "skuld",
   agent: "build",
   reviewerAgent: "code-reviewer",
-  goalCommand: "/jarvis",
+  goalCommand: "/tyr",
   maxReviewLoops: 10,
   preferSubagents: true,
   maxParallelSubagents: 4,
@@ -15,8 +15,8 @@ function normalizeOptions(options = {}) {
   return { ...DEFAULT_OPTIONS, ...options }
 }
 
-function ultrareviewTemplate(options) {
-  return `Run an ultrareview for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
+function skuldTemplate(options) {
+  return `Run a Skuld review for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
 
 Review target:
 $ARGUMENTS
@@ -54,9 +54,9 @@ Findings format:
 Repair loop:
 1. If there are no actionable findings, run or recommend the broadest feasible verification and produce the final verdict.
 2. If findings exist, run a targeted repair loop using:
-   ${options.goalCommand} <fix the ultrareview findings>
+   ${options.goalCommand} <fix the Skuld review findings>
 3. Re-run relevant verification.
-4. Run ultrareview again.
+4. Run Skuld review again.
 5. Repeat until no actionable findings remain or until ${options.maxReviewLoops} review loops have completed.
 6. If the loop limit is reached, stop and report remaining blockers instead of claiming completion.
 
@@ -69,9 +69,9 @@ Final response:
 - Residual non-blocking risks, if any.`
 }
 
-export async function UltrareviewPlugin(_input, options) {
+export async function SkuldPlugin(_input, options) {
   const config = normalizeOptions(options)
-  const template = ultrareviewTemplate(config)
+  const template = skuldTemplate(config)
   const commandNames = [config.commandName]
 
   return {
@@ -97,4 +97,4 @@ export async function UltrareviewPlugin(_input, options) {
   }
 }
 
-export default UltrareviewPlugin
+export default SkuldPlugin

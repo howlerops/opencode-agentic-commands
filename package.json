@@ -7,13 +7,13 @@
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",
-    "./jarvis": "./src/jarvis.mjs",
-    "./banner": "./src/banner.mjs",
-    "./fury": "./src/fury.mjs",
-    "./stark": "./src/stark.mjs",
-    "./strange": "./src/strange.mjs",
-    "./watcher": "./src/watcher.mjs",
-    "./thanos": "./src/thanos.mjs"
+    "./tyr": "./src/tyr.mjs",
+    "./munin": "./src/munin.mjs",
+    "./eitri": "./src/eitri.mjs",
+    "./vidar": "./src/vidar.mjs",
+    "./hugin": "./src/hugin.mjs",
+    "./skuld": "./src/skuld.mjs",
+    "./polaris": "./src/polaris.mjs"
   },
   "files": [
     "src",
@@ -38,13 +38,13 @@
     "pi-extension",
     "plugin",
     "baro",
-    "jarvis",
-    "banner",
-    "fury",
-    "stark",
-    "strange",
-    "watcher",
-    "thanos",
+    "tyr",
+    "munin",
+    "eitri",
+    "vidar",
+    "hugin",
+    "skuld",
+    "polaris",
     "agentic"
   ],
   "peerDependencies": {

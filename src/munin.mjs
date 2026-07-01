@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "banner",
+  commandName: "munin",
   agent: "build",
   programFile: "program.md",
   mutableFiles: ["train.py"],
@@ -74,7 +74,7 @@ Use this process:
 Autoresearch reference behavior to emulate: an autonomous researcher repeatedly edits experiment code, trains/evaluates for a fixed budget, compares a metric, keeps or discards changes, and leaves a transparent experiment log. Change defaults in \`opencode.json\` plugin options for \`programFile\`, \`mutableFiles\`, \`protectedFiles\`, \`setupCommand\`, \`experimentCommand\`, \`metricName\`, \`metricDirection\`, \`timeBudget\`, and \`maxIterations\`.`
 }
 
-export async function AutoresearchPlugin(_input, options) {
+export async function MuninPlugin(_input, options) {
   const config = normalizeOptions(options)
   const template = autoresearchTemplate(config)
   const commandNames = [config.commandName]
@@ -102,4 +102,4 @@ export async function AutoresearchPlugin(_input, options) {
   }
 }
 
-export default AutoresearchPlugin
+export default MuninPlugin

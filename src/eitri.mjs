@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "fury",
+  commandName: "eitri",
   agent: "build",
   defaultMode: "opencode-native",
   completionModel: "openai/gpt-5.3-codex-spark",
@@ -63,7 +63,7 @@ Use this process:
 AutoAgent reference behavior to emulate: natural-language agent and workflow creation, self-managing orchestration, iterative profile/tool/workflow refinement, and zero-code user interaction, implemented with opencode primitives. Change defaults in \`opencode.json\` plugin options for \`defaultMode\`, \`completionModel\`, \`apiBaseUrl\`, \`containerName\`, \`port\`, \`gitClone\`, \`testPullName\`, \`allowToolCreation\`, \`allowWorkflowCreation\`, and \`outputScope\`.`
 }
 
-export async function AutoagentPlugin(_input, options) {
+export async function EitriPlugin(_input, options) {
   const config = normalizeOptions(options)
   const template = autoagentTemplate(config)
   const commandNames = [config.commandName]
@@ -91,4 +91,4 @@ export async function AutoagentPlugin(_input, options) {
   }
 }
 
-export default AutoagentPlugin
+export default EitriPlugin

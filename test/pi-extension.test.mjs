@@ -11,13 +11,13 @@ agenticCommands({
 })
 
 assert.deepEqual([...registered.keys()].sort(), [
-  "banner",
-  "fury",
-  "jarvis",
-  "stark",
-  "strange",
-  "thanos",
-  "watcher",
+  "eitri",
+  "hugin",
+  "munin",
+  "polaris",
+  "skuld",
+  "tyr",
+  "vidar",
 ])
 
 for (const [name, command] of registered) {
@@ -33,18 +33,18 @@ for (const [name, command] of registered) {
   assert.match(sent[0], new RegExp(`${name} smoke|Research objective|Request|Original goal|Review target|Goal`))
 }
 
-assert.match(COMMANDS.stark.render("ship it"), /Only stop before completion when you hit a concrete blocker/)
-assert.match(COMMANDS.stark.render("ship it"), /Phase 0: context research and anchor plan/)
-assert.match(COMMANDS.stark.render("ship it"), /context research dossier/)
-assert.match(COMMANDS.stark.render("ship it"), /optional memory is not a blocker/)
-assert.match(COMMANDS.strange.render("ship it"), /extensive context research/)
-assert.match(COMMANDS.strange.render("ship it"), /Assumption and question ledger/)
-assert.match(COMMANDS.strange.render("ship it"), /AgentDB\/Agent Wisdom recall/)
-assert.match(COMMANDS.banner.render("skills"), /commands, skills, extensions, or prompts/)
-assert.match(COMMANDS.banner.render("skills"), /Do not install or start long-lived AgentDB services/)
-assert.match(COMMANDS.thanos.render("ship it"), /\/strange, \/jarvis, \/fury, \/banner, \/stark, and \/watcher/)
-assert.match(COMMANDS.thanos.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
-assert.match(COMMANDS.watcher.render("current diff"), /Review target:\ncurrent diff/)
+assert.match(COMMANDS.vidar.render("ship it"), /Only stop before completion when you hit a concrete blocker/)
+assert.match(COMMANDS.vidar.render("ship it"), /Phase 0: context research and anchor plan/)
+assert.match(COMMANDS.vidar.render("ship it"), /context research dossier/)
+assert.match(COMMANDS.vidar.render("ship it"), /optional memory is not a blocker/)
+assert.match(COMMANDS.hugin.render("ship it"), /extensive context research/)
+assert.match(COMMANDS.hugin.render("ship it"), /Assumption and question ledger/)
+assert.match(COMMANDS.hugin.render("ship it"), /AgentDB\/Agent Wisdom recall/)
+assert.match(COMMANDS.munin.render("skills"), /commands, skills, extensions, or prompts/)
+assert.match(COMMANDS.munin.render("skills"), /Do not install or start long-lived AgentDB services/)
+assert.match(COMMANDS.polaris.render("ship it"), /\/hugin, \/tyr, \/eitri, \/munin, \/vidar, and \/skuld/)
+assert.match(COMMANDS.polaris.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
+assert.match(COMMANDS.skuld.render("current diff"), /Review target:\ncurrent diff/)
 
 for (const name of registered.keys()) {
   const prompt = await readFile(new URL(`../pi/prompts/${name}.md`, import.meta.url), "utf8")
