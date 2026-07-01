@@ -19,6 +19,7 @@
   "files": [
     "src",
     "pi",
+    "scripts",
     "README.md",
     "LICENSE"
   ],
@@ -31,6 +32,7 @@
     ]
   },
   "scripts": {
+    "install:hooks": "sh scripts/hooks/install.sh",
     "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs"
   },
   "keywords": [

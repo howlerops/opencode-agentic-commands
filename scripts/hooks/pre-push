@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+remote_name="${1:-origin}"
+remote_url="${2:-}"
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  base="HEAD"
+else
+  base="--root"
+fi
+
+changed="$(git diff --cached --name-only "$base" 2>/dev/null || true)"
+unstaged="$(git diff --name-only 2>/dev/null || true)"
+untracked="$(git ls-files --others --exclude-standard 2>/dev/null || true)"
+all_changed="$(printf '%s\n%s\n%s\n' "$changed" "$unstaged" "$untracked" | sed '/^$/d' | sort -u)"
+
+package_changed="$(printf '%s\n' "$all_changed" | grep -E '^(src/|pi/|package\.json|package-lock\.json|README\.md)' || true)"
+docs_changed="$(printf '%s\n' "$all_changed" | grep -E '^(docs/|README\.md|\.github/workflows/pages\.yml)' || true)"
+
+if [ -n "$package_changed" ] && [ -z "$docs_changed" ]; then
+  cat <<EOF
+
+Pages reminder before push to ${remote_name} ${remote_url}:
+Package-facing files changed, but no docs/README/Pages workflow files changed.
+If commands, install steps, exports, Pi prompts, or public behavior changed, update docs/index.html and README.md before pushing.
+
+This hook is advisory only; push will continue.
+EOF
+fi
+
+exit 0

@@ -144,6 +144,20 @@ pi install npm:opencode-agentic-commands
 
 Pi loads commands from `pi/extensions/agentic-commands.js` and prompt templates from `pi/prompts/`.
 
+The GitHub Pages site is shared by OpenCode and Pi on purpose. Both runtimes install from the same package and expose the same command set, so one landing page avoids divergent docs. Add a distinct Pi-specific web view only if Pi later needs marketplace-only assets, screenshots, or install metadata that would make the shared page unclear.
+
+## Pages And Hooks
+
+GitHub Pages deploys from `docs/` on every push to `main` and can also be run manually from Actions.
+
+Install the local advisory hook to remind you to update `README.md` and `docs/index.html` before pushing package-facing changes:
+
+```bash
+npm run install:hooks
+```
+
+The hook warns when `src/`, `pi/`, or package metadata changed without a docs or README change. It does not block the push.
+
 ## Default Config
 
 All options are optional. This block shows the defaults and the new command keys.
