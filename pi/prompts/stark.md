@@ -25,7 +25,7 @@ Phase 0: context research and anchor plan
 - If AgentDB is available and the work produces a durable lesson, store the successful pattern, failure critique, or review finding after verification. Do not install or start long-lived AgentDB services from inside the work loop unless the user explicitly asks.
 
 Phase 1: implementation loop
-- Use `/goal` semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
+- Use `/jarvis` semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
 - If work remains, start another targeted loop instead of exiting.
 
 Phase 2: critic-driven loops

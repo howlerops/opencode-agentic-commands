@@ -1,9 +1,9 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "ultrawork",
+  commandName: "stark",
   agent: "build",
-  goalCommand: "/goal",
+  goalCommand: "/jarvis",
   criticAgent: "code-reviewer",
   maxGoalLoops: 20,
   maxReviewLoops: 10,
@@ -129,7 +129,7 @@ export async function UltraworkPlugin(_input, options) {
     config(opencodeConfig) {
       opencodeConfig.command ||= {}
       opencodeConfig.command[config.commandName] = {
-        description: "Run repeated /goal implementation and PR-review repair loops until a critic finds nothing left.",
+        description: "Run repeated /jarvis implementation and PR-review repair loops until a critic finds nothing left.",
         agent: config.agent,
         template,
       }

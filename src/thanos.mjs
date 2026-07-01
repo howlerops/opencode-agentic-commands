@@ -3,12 +3,12 @@ import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./sh
 const DEFAULT_OPTIONS = {
   commandName: "thanos",
   agent: "build",
-  planCommand: "/ultraplan",
-  goalCommand: "/goal",
-  workCommand: "/ultrawork",
-  reviewCommand: "/ultrareview",
-  researchCommand: "/autoresearch",
-  agentCommand: "/autoagent",
+  planCommand: "/strange",
+  goalCommand: "/jarvis",
+  workCommand: "/stark",
+  reviewCommand: "/watcher",
+  researchCommand: "/banner",
+  agentCommand: "/fury",
   maxOrchestrationLoops: 20,
   completionStandard: "plan, implementation, research optimization, and review all agree there is no remaining required work",
 }

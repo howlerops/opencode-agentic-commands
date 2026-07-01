@@ -18,9 +18,9 @@ async function expands(plugin, slash, expected, options) {
 
 {
   const { commands } = await commandsFrom(AgenticCommandsPlugin, {
-    goal: { baroModel: "openai/gpt-5.3-codex-spark" },
+    jarvis: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
-  assert.deepEqual(Object.keys(commands).sort(), ["autoagent", "autoresearch", "goal", "thanos", "ultraplan", "ultrareview", "ultrawork"])
+  assert.deepEqual(Object.keys(commands).sort(), ["banner", "fury", "jarvis", "stark", "strange", "thanos", "watcher"])
 }
 
 {
@@ -57,12 +57,12 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(GoalPlugin, "/goal add auth", /baro --llm opencode -m openai\/gpt-5\.3-codex-spark/)
+  const text = await expands(GoalPlugin, "/jarvis add auth", /baro --llm opencode -m openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /add auth/)
 }
 
 {
-  const text = await expands(AutoresearchPlugin, "/autoresearch improve bpb", /uv run train\.py/)
+  const text = await expands(AutoresearchPlugin, "/banner improve bpb", /uv run train\.py/)
   assert.match(text, /val_bpb/)
   assert.match(text, /improve bpb/)
   assert.match(text, /AgentDB MCP\/tools/)
@@ -70,20 +70,20 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(AutoagentPlugin, "/autoagent create triage workflow", /COMPLETION_MODEL=openai\/gpt-5\.3-codex-spark/)
+  const text = await expands(AutoagentPlugin, "/fury create triage workflow", /COMPLETION_MODEL=openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /create triage workflow/)
 }
 
 {
   const { hooks } = await commandsFrom(AutoagentPlugin)
-  const output = { parts: [{ type: "text", text: "/autoagnet create typo alias" }] }
+  const output = { parts: [{ type: "text", text: "/autoagent create old command" }] }
   await hooks["chat.message"]({}, output)
-  assert.equal(output.parts[0].text, "/autoagnet create typo alias")
+  assert.equal(output.parts[0].text, "/autoagent create old command")
 }
 
 {
-  const text = await expands(UltraworkPlugin, "/ultrawork ship payments", /repeatedly execute goal-sized implementation loops/)
-  assert.match(text, /\/goal ship payments/)
+  const text = await expands(UltraworkPlugin, "/stark ship payments", /repeatedly execute goal-sized implementation loops/)
+  assert.match(text, /\/jarvis ship payments/)
   assert.match(text, /PR-review repair loops/)
   assert.match(text, /Maximum parallel subagents: 4/)
   assert.match(text, /critic confirms no remaining required work/)
@@ -97,7 +97,7 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(UltraplanPlugin, "/ultraplan ship payments", /Create an ultraplan/)
+  const text = await expands(UltraplanPlugin, "/strange ship payments", /Create an ultraplan/)
   assert.match(text, /ship payments/)
   assert.match(text, /Story DAG/)
   assert.match(text, /Maximum parallel subagents to assume: 4/)
@@ -109,7 +109,7 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(UltrareviewPlugin, "/ultrareview current diff", /Run an ultrareview/)
+  const text = await expands(UltrareviewPlugin, "/watcher current diff", /Run an ultrareview/)
   assert.match(text, /current diff/)
   assert.match(text, /Review loop ledger/)
   assert.match(text, /Maximum parallel review subagents: 4/)
@@ -118,11 +118,11 @@ async function expands(plugin, slash, expected, options) {
 {
   const text = await expands(ThanosPlugin, "/thanos ship the full platform", /Run this task in Thanos mode/)
   assert.match(text, /ship the full platform/)
-  assert.match(text, /\/ultraplan/)
-  assert.match(text, /\/autoagent/)
-  assert.match(text, /\/autoresearch/)
-  assert.match(text, /\/ultrawork/)
-  assert.match(text, /\/ultrareview/)
+  assert.match(text, /\/strange/)
+  assert.match(text, /\/fury/)
+  assert.match(text, /\/banner/)
+  assert.match(text, /\/stark/)
+  assert.match(text, /\/watcher/)
   assert.match(text, /Do not call the task complete until planning, implementation, measurable outcome checks, and final review all find no remaining required work/)
 }
 

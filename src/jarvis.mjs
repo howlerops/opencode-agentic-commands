@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "goal",
+  commandName: "jarvis",
   agent: "build",
   baroBackend: "opencode",
   baroModel: "openai/gpt-5.3-codex-spark",

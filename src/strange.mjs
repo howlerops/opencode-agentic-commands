@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "ultraplan",
+  commandName: "strange",
   agent: "plan",
   maxParallelSubagents: 4,
   outputArtifact: "conversation plan; create a repo file only when the user asks",
@@ -22,7 +22,7 @@ Output artifact:
 - ${options.outputArtifact}.
 
 Planning principles:
-- Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /goal or /ultrawork safely.
+- Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /jarvis or /stark safely.
 - Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
 - Build a context research dossier with file references and evidence. Separate facts observed in the repo from assumptions, inferences, and open questions.
 - Optional memory: if AgentDB MCP/tools, Agent Wisdom, or the agentdb CLI are already available, use them to recall prior successful patterns, critiques, and skill lessons. If unavailable, skip them quietly and continue from repo sources; optional memory is not a blocker and should not create noisy failure narration.
@@ -54,7 +54,7 @@ Final response:
 - Present the approved plan only after the verification pass.
 - Include unresolved questions only if they block correct implementation.
 - Make the plan self-contained enough that a fresh worker can execute it without repeating discovery.
-- End with the recommended first execution command, usually /goal or /ultrawork with the highest-priority story or full goal.`
+- End with the recommended first execution command, usually /jarvis or /stark with the highest-priority story or full goal.`
 }
 
 export async function UltraplanPlugin(_input, options) {

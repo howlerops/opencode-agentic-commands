@@ -1,18 +1,18 @@
-import { GoalPlugin } from "./goal.mjs"
-import { AutoresearchPlugin } from "./autoresearch.mjs"
-import { AutoagentPlugin } from "./autoagent.mjs"
-import { UltraworkPlugin } from "./ultrawork.mjs"
-import { UltraplanPlugin } from "./ultraplan.mjs"
-import { UltrareviewPlugin } from "./ultrareview.mjs"
+import { GoalPlugin } from "./jarvis.mjs"
+import { AutoresearchPlugin } from "./banner.mjs"
+import { AutoagentPlugin } from "./fury.mjs"
+import { UltraworkPlugin } from "./stark.mjs"
+import { UltraplanPlugin } from "./strange.mjs"
+import { UltrareviewPlugin } from "./watcher.mjs"
 import { ThanosPlugin } from "./thanos.mjs"
 
 const DEFAULT_OPTIONS = {
-  goal: {},
-  autoresearch: {},
-  autoagent: {},
-  ultrawork: {},
-  ultraplan: {},
-  ultrareview: {},
+  jarvis: {},
+  banner: {},
+  fury: {},
+  stark: {},
+  strange: {},
+  watcher: {},
   thanos: {},
   memory: {},
 }
@@ -97,12 +97,12 @@ function chainHooks(hooksList, hookName) {
 export async function AgenticCommandsPlugin(input, options = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options }
   const hooksList = [
-    await GoalPlugin(input, config.goal),
-    await AutoresearchPlugin(input, config.autoresearch),
-    await AutoagentPlugin(input, config.autoagent),
-    await UltraworkPlugin(input, config.ultrawork),
-    await UltraplanPlugin(input, config.ultraplan),
-    await UltrareviewPlugin(input, config.ultrareview),
+    await GoalPlugin(input, config.jarvis),
+    await AutoresearchPlugin(input, config.banner),
+    await AutoagentPlugin(input, config.fury),
+    await UltraworkPlugin(input, config.stark),
+    await UltraplanPlugin(input, config.strange),
+    await UltrareviewPlugin(input, config.watcher),
     await ThanosPlugin(input, config.thanos),
   ]
 
@@ -116,12 +116,12 @@ export async function AgenticCommandsPlugin(input, options = {}) {
   }
 }
 
-export { GoalPlugin } from "./goal.mjs"
-export { AutoresearchPlugin } from "./autoresearch.mjs"
-export { AutoagentPlugin } from "./autoagent.mjs"
-export { UltraworkPlugin } from "./ultrawork.mjs"
-export { UltraplanPlugin } from "./ultraplan.mjs"
-export { UltrareviewPlugin } from "./ultrareview.mjs"
+export { GoalPlugin } from "./jarvis.mjs"
+export { AutoresearchPlugin } from "./banner.mjs"
+export { AutoagentPlugin } from "./fury.mjs"
+export { UltraworkPlugin } from "./stark.mjs"
+export { UltraplanPlugin } from "./strange.mjs"
+export { UltrareviewPlugin } from "./watcher.mjs"
 export { ThanosPlugin } from "./thanos.mjs"
 
 export default AgenticCommandsPlugin

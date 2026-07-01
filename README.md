@@ -2,13 +2,13 @@
 
 OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
 
-- `/goal` - baro-style end-to-end repo execution with architecture, story DAG, critic loop, and final verification.
-- `/autoresearch` - karpathy/autoresearch-style experiment loop with baseline, metric tracking, keep/discard decisions, and an experiment ledger.
-- `/autoagent` - AutoAgent-style natural-language agent/workflow creation using opencode-native artifacts.
-- `/ultrawork` - repeated `/goal` implementation loops plus PR-review repair loops until a critic finds nothing left.
-- `/ultraplan` - anchor planning with extensive context research, story DAGs, parallel lanes, risks, and review gates before implementation.
-- `/ultrareview` - repeated PR-style review and repair loops until no actionable findings remain.
-- `/thanos` - top-level E2E orchestrator that composes `/ultraplan`, `/goal`, `/autoagent`, `/autoresearch`, `/ultrawork`, and `/ultrareview`.
+- `/jarvis` - baro-style end-to-end repo execution with architecture, story DAG, critic loop, and final verification.
+- `/banner` - karpathy/autoresearch-style experiment loop with baseline, metric tracking, keep/discard decisions, and an experiment ledger.
+- `/fury` - AutoAgent-style natural-language agent/workflow creation using opencode-native artifacts.
+- `/stark` - repeated `/jarvis` implementation loops plus PR-review repair loops until a critic finds nothing left.
+- `/strange` - anchor planning with extensive context research, story DAGs, parallel lanes, risks, and review gates before implementation.
+- `/watcher` - repeated PR-style review and repair loops until no actionable findings remain.
+- `/thanos` - top-level E2E orchestrator that composes `/strange`, `/jarvis`, `/fury`, `/banner`, `/stark`, and `/watcher`.
 
 For Pi, the package exposes all seven commands as Pi extensions and prompt templates.
 
@@ -57,12 +57,12 @@ Pi loads this repo as a Pi package through the `pi.extensions` and `pi.prompts` 
 
 The Pi extension registers these slash commands directly:
 
-- `/goal`
-- `/autoresearch`
-- `/autoagent`
-- `/ultrawork`
-- `/ultraplan`
-- `/ultrareview`
+- `/jarvis`
+- `/banner`
+- `/fury`
+- `/stark`
+- `/strange`
+- `/watcher`
 - `/thanos`
 
 The prompt templates in `pi/prompts/` provide static fallbacks for the same command names and make the workflows browsable/configurable as plain Markdown.
@@ -76,9 +76,9 @@ pi install /Users/jacob_1/opencode-agentic-commands
 Then restart Pi or run `/reload`, and use:
 
 ```text
-/goal Add JWT authentication with role-based access control
-/ultrawork Finish the checkout flow until review is clean
-/ultrareview current diff
+/jarvis Add JWT authentication with role-based access control
+/stark Finish the checkout flow until review is clean
+/watcher current diff
 /thanos Ship the billing integration end to end
 ```
 
@@ -133,7 +133,7 @@ For OpenCode, enable memory by adding `memory` options to the plugin config:
 
 When `memory.agentdb.enabled` is true, the plugin adds an OpenCode MCP entry using `npx -y agentdb@latest mcp start`. Existing `mcp.agentdb` entries are preserved unless `memory.agentdb.overwrite` is true.
 
-Commands that do context research (`/ultraplan`, `/ultrawork`, `/autoresearch`) should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, the commands should skip them quietly and continue from repo sources. Optional memory must not become a blocker or create repeated "unavailable" narration.
+Commands that do context research (`/strange`, `/stark`, `/banner`) should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, the commands should skip them quietly and continue from repo sources. Optional memory must not become a blocker or create repeated "unavailable" narration.
 
 Pi extension docs explicitly warn against starting long-lived resources in extension factory startup, so the Pi package never auto-starts AgentDB. Start it through your harness MCP config, a project-local extension, or an explicit user command when needed.
 
@@ -156,12 +156,12 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
     [
       "opencode-agentic-commands",
       {
-        "goal": {
+        "jarvis": {
           "baroBackend": "opencode",
           "baroModel": "openai/gpt-5.3-codex-spark",
           "baroExtraArgs": ""
         },
-        "autoresearch": {
+        "banner": {
           "programFile": "program.md",
           "mutableFiles": ["train.py"],
           "protectedFiles": ["prepare.py"],
@@ -172,7 +172,7 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
           "timeBudget": "5 minutes per experiment",
           "maxIterations": "until user budget/time limit or diminishing returns"
         },
-        "autoagent": {
+        "fury": {
           "defaultMode": "opencode-native",
           "completionModel": "openai/gpt-5.3-codex-spark",
           "apiBaseUrl": "",
@@ -184,8 +184,8 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
           "allowWorkflowCreation": true,
           "outputScope": "prefer project .opencode artifacts; use global artifacts only when explicitly requested"
         },
-        "ultrawork": {
-          "goalCommand": "/goal",
+        "stark": {
+          "goalCommand": "/jarvis",
           "criticAgent": "code-reviewer",
           "maxGoalLoops": 20,
           "maxReviewLoops": 10,
@@ -193,26 +193,26 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
           "maxParallelSubagents": 4,
           "completionStandard": "critic confirms no remaining required work, no unresolved risks, and no PR review findings"
         },
-        "ultraplan": {
+        "strange": {
           "maxParallelSubagents": 4,
           "outputArtifact": "conversation plan; create a repo file only when the user asks",
           "verificationStandard": "plan is reviewed for feasibility, dependency order, risks, and test coverage before implementation starts"
         },
-        "ultrareview": {
+        "watcher": {
           "reviewerAgent": "code-reviewer",
-          "goalCommand": "/goal",
+          "goalCommand": "/jarvis",
           "maxReviewLoops": 10,
           "preferSubagents": true,
           "maxParallelSubagents": 4,
           "completionStandard": "review finds no actionable bugs, regressions, missing required tests, or unresolved risks"
         },
         "thanos": {
-          "planCommand": "/ultraplan",
-          "goalCommand": "/goal",
-          "agentCommand": "/autoagent",
-          "researchCommand": "/autoresearch",
-          "workCommand": "/ultrawork",
-          "reviewCommand": "/ultrareview",
+          "planCommand": "/strange",
+          "goalCommand": "/jarvis",
+          "agentCommand": "/fury",
+          "researchCommand": "/banner",
+          "workCommand": "/stark",
+          "reviewCommand": "/watcher",
           "maxOrchestrationLoops": 20,
           "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
         },
@@ -242,12 +242,12 @@ You can install only one command by using subpath exports:
 ```json
 {
   "plugin": [
-    ["opencode-agentic-commands/goal", { "baroModel": "openai/gpt-5.3-codex-spark" }],
-    ["opencode-agentic-commands/autoresearch", { "experimentCommand": "uv run train.py" }],
-    ["opencode-agentic-commands/autoagent", { "completionModel": "openai/gpt-5.3-codex-spark" }],
-    ["opencode-agentic-commands/ultrawork", { "maxGoalLoops": 20 }],
-    ["opencode-agentic-commands/ultraplan", { "maxParallelSubagents": 4 }],
-    ["opencode-agentic-commands/ultrareview", { "maxReviewLoops": 10 }],
+    ["opencode-agentic-commands/jarvis", { "baroModel": "openai/gpt-5.3-codex-spark" }],
+    ["opencode-agentic-commands/banner", { "experimentCommand": "uv run train.py" }],
+    ["opencode-agentic-commands/fury", { "completionModel": "openai/gpt-5.3-codex-spark" }],
+    ["opencode-agentic-commands/stark", { "maxGoalLoops": 20 }],
+    ["opencode-agentic-commands/strange", { "maxParallelSubagents": 4 }],
+    ["opencode-agentic-commands/watcher", { "maxReviewLoops": 10 }],
     ["opencode-agentic-commands/thanos", { "maxOrchestrationLoops": 20 }]
   ]
 }
@@ -257,12 +257,12 @@ You can install only one command by using subpath exports:
 
 - Commands appear in the OpenCode TUI slash-command list after restart.
 - No custom TUI screen is included; the TUI already exposes custom slash commands and descriptions.
-- `/goal` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
-- `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It starts with a context research dossier and anchor plan, keeps that plan current through every loop, and should only stop before completion for a concrete blocker it cannot resolve.
-- `/ultraplan` is intentionally non-mutating by default: it performs extensive context research, produces a self-contained anchor plan, reviews the plan, and recommends the first execution command.
-- `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
-- `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention. For commands, skills, extensions, and prompts, it should define repeatable outcome tests before editing: expansion invariants, package load checks, command registration checks, prompt regression assertions, and before/after smoke comparisons where feasible.
-- `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
+- `/jarvis` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
+- `/stark` composes `/jarvis` loops with critic checks and a final PR-review loop. It starts with a context research dossier and anchor plan, keeps that plan current through every loop, and should only stop before completion for a concrete blocker it cannot resolve.
+- `/strange` is intentionally non-mutating by default: it performs extensive context research, produces a self-contained anchor plan, reviews the plan, and recommends the first execution command.
+- `/watcher` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
+- `/banner` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention. For commands, skills, extensions, and prompts, it should define repeatable outcome tests before editing: expansion invariants, package load checks, command registration checks, prompt regression assertions, and before/after smoke comparisons where feasible.
+- `/fury` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
 - `/thanos` is the highest-level orchestrator. Use it when the task should be carried from context research and planning through agent/workflow design, measurable optimization, implementation, final review, and repair.
 - In Pi, `pi/extensions/agentic-commands.js` registers all seven commands and `pi/prompts/` ships matching prompt templates.
 

@@ -1,10 +1,10 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "ultrareview",
+  commandName: "watcher",
   agent: "build",
   reviewerAgent: "code-reviewer",
-  goalCommand: "/goal",
+  goalCommand: "/jarvis",
   maxReviewLoops: 10,
   preferSubagents: true,
   maxParallelSubagents: 4,

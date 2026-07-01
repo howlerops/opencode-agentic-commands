@@ -7,7 +7,7 @@ Create an ultraplan for this goal before implementation. Do not edit code unless
 Goal:
 $ARGUMENTS
 
-Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide `/goal` or `/ultrawork` safely.
+Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide `/jarvis` or `/stark` safely.
 
 Planning principles:
 - Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.

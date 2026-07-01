@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "autoagent",
+  commandName: "fury",
   agent: "build",
   defaultMode: "opencode-native",
   completionModel: "openai/gpt-5.3-codex-spark",

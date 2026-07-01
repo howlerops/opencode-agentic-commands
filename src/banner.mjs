@@ -1,7 +1,7 @@
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
-  commandName: "autoresearch",
+  commandName: "banner",
   agent: "build",
   programFile: "program.md",
   mutableFiles: ["train.py"],
