@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
@@ -17,6 +18,25 @@ async function expands(plugin, slash, expected, options) {
   await hooks["chat.message"]({}, output)
   assert.match(output.parts[0].text, expected)
   return output.parts[0].text
+}
+
+async function withSessionServer(sessions, fn) {
+  const server = createServer((request, response) => {
+    if (request.url === "/session") {
+      response.setHeader("content-type", "application/json")
+      response.end(JSON.stringify(sessions))
+      return
+    }
+    response.statusCode = 404
+    response.end("not found")
+  })
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
+  try {
+    const address = server.address()
+    await fn(`http://127.0.0.1:${address.port}`)
+  } finally {
+    await new Promise((resolve) => server.close(resolve))
+  }
 }
 
 {
@@ -155,6 +175,9 @@ async function expands(plugin, slash, expected, options) {
   const output = { parts: [{ type: "text", text: "/bifrost start port 4141" }] }
   assert.equal(hooks["chat.message"], undefined)
   assert.equal(output.parts[0].text, "/bifrost start port 4141")
+  const envOutput = { env: {} }
+  await hooks["shell.env"]({ sessionID: "ses_current" }, envOutput)
+  assert.equal(envOutput.env.BIFROST_SESSION_ID, "ses_current")
 }
 
 {
@@ -211,5 +234,33 @@ async function expands(plugin, slash, expected, options) {
     await rm(temp, { recursive: true, force: true })
   }
 }
+
+await withSessionServer([
+  { id: "ses_newer", title: "Newer session", directory: "/tmp/newer", time: { updated: 30 } },
+  { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
+], async (localUrl) => {
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-session-test-"))
+  try {
+    const stateDir = path.join(temp, ".bifrost")
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl,
+      publicUrl: "https://example.trycloudflare.com",
+      username: "opencode",
+      password: "bifrost-test-password",
+      passwordSource: "generated temporary password",
+      webPid: process.pid,
+      tunnelPid: process.pid,
+      tunnelProvider: "cloudflared",
+    })}\n`)
+    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "status" }, output)
+    assert.match(output.parts[0].text, /Current TUI session URL: https:\/\/example\.trycloudflare\.com\/Users\/test\/project\/session\/ses_current/)
+    assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
 
 console.log("plugin tests passed")

@@ -138,6 +138,15 @@ function startProcess(command, args, env, logPath) {
   return child.pid
 }
 
+async function openUrl(url) {
+  if (!url) return false
+  const opener = process.platform === "darwin" ? await commandPath("open") : await commandPath("xdg-open")
+  if (!opener) return false
+  const child = spawn(opener, [url], { detached: true, stdio: "ignore" })
+  child.unref()
+  return true
+}
+
 async function waitForLocalServer(url, timeoutMs) {
   const started = Date.now()
   while (Date.now() - started < timeoutMs) {
@@ -182,7 +191,7 @@ function sessionUrl(baseUrl, session) {
   return `${trimSlash(baseUrl)}/${dir}/session/${encodeURIComponent(session.id)}`
 }
 
-async function sessionLinks(state, limit = 3) {
+async function sessionLinks(state, preferredSessionID = "", limit = 3) {
   if (!state?.localUrl) return []
   try {
     const response = await fetch(`${trimSlash(state.localUrl)}/session`, { headers: authHeader(state) })
@@ -191,13 +200,18 @@ async function sessionLinks(state, limit = 3) {
     if (!Array.isArray(sessions)) return []
     return sessions
       .filter((session) => session.id && sessionPath(session))
-      .sort((a, b) => Number(b.time?.updated || 0) - Number(a.time?.updated || 0))
-      .slice(0, limit)
+      .sort((a, b) => {
+        if (preferredSessionID && a.id === preferredSessionID) return -1
+        if (preferredSessionID && b.id === preferredSessionID) return 1
+        return Number(b.time?.updated || 0) - Number(a.time?.updated || 0)
+      })
+      .slice(0, Math.max(limit, preferredSessionID ? 1 : 0))
       .map((session) => ({
         id: session.id,
         title: session.title || session.slug || session.id,
         directory: session.directory || session.path || "unknown",
         url: sessionUrl(state.publicUrl || state.localUrl, session),
+        preferred: Boolean(preferredSessionID && session.id === preferredSessionID),
       }))
       .filter((session) => session.url)
   } catch {
@@ -208,20 +222,21 @@ async function sessionLinks(state, limit = 3) {
 function formatSessionLinks(links) {
   if (!links.length) return "Session links: unavailable"
   const current = links[0]
-  const recent = links.map((session, index) => `${index + 1}. ${session.title} (${session.directory})\n   ${session.url}`).join("\n")
-  return `Current session URL: ${current.url}
+  const label = current.preferred ? "Current TUI session" : "Most recent session"
+  const recent = links.map((session, index) => `${index + 1}. ${session.preferred ? "[current] " : ""}${session.title} (${session.directory})\n   ${session.url}`).join("\n")
+  return `${label} URL: ${current.url}
 Current session title: ${current.title}
 
 Recent session URLs:
 ${recent}`
 }
 
-async function statusText(stateDir, state) {
+async function statusText(stateDir, state, preferredSessionID = "", sessionLinkList) {
   if (!state) return `Bifrost status: no managed portal state found.\nState directory: ${stateDir}`
   const webAlive = pidAlive(state.webPid)
   const tunnelAlive = pidAlive(state.tunnelPid)
   const username = state.username || "opencode"
-  const links = webAlive ? await sessionLinks(state) : []
+  const links = sessionLinkList || (webAlive ? await sessionLinks(state, preferredSessionID) : [])
   return `Bifrost status: ${webAlive && tunnelAlive ? "running" : "partial or stale"}
 
 Open: ${state.publicUrl || state.localUrl || "unknown"}
@@ -268,7 +283,11 @@ async function stopBifrost(stateDir) {
 async function startBifrost(pluginInput, config, request) {
   const stateDir = resolveStateDir(pluginInput, config)
   const existing = await readState(stateDir)
-  if (existing && !request.newServer && pidAlive(existing.webPid) && pidAlive(existing.tunnelPid)) return statusText(stateDir, existing)
+  if (existing && !request.newServer && pidAlive(existing.webPid) && pidAlive(existing.tunnelPid)) {
+    const links = await sessionLinks(existing, request.sessionID)
+    const opened = await openUrl(links[0]?.url)
+    return `${await statusText(stateDir, existing, request.sessionID, links)}\nOpened session URL: ${opened ? links[0].url : "not opened"}`
+  }
 
   await mkdir(stateDir, { recursive: true })
   const opencode = await commandPath("opencode")
@@ -300,12 +319,13 @@ async function startBifrost(pluginInput, config, request) {
   if (!publicUrl) {
     return `Bifrost portal partially started: OpenCode Web is running, but no public tunnel URL was detected yet.
 
-${await statusText(stateDir, state)}
+${await statusText(stateDir, state, request.sessionID)}
 
 Check tunnel log: ${tunnelLog}`
   }
 
-  const links = await sessionLinks(state)
+  const links = await sessionLinks(state, request.sessionID)
+  const opened = await openUrl(links[0]?.url)
 
   return `Bifrost portal started.
 
@@ -318,6 +338,8 @@ Copy login: url=${publicUrl} username=${username} password=${password}
 
 ${formatSessionLinks(links)}
 
+Opened session URL: ${opened ? links[0].url : "not opened"}
+
 Attach: opencode attach ${localUrl}
 Status: /bifrost status
 Stop: /bifrost stop
@@ -329,10 +351,11 @@ Web log: ${webLog}
 Tunnel log: ${tunnelLog}`
 }
 
-async function runBifrost(pluginInput, config, args) {
+async function runBifrost(pluginInput, config, args, sessionID = "") {
   const request = parseRequest(args)
+  request.sessionID = sessionID
   const { stateDir, state } = await findState(pluginInput, config)
-  if (request.mode === "status") return statusText(stateDir, state)
+  if (request.mode === "status") return statusText(stateDir, state, request.sessionID)
   if (request.mode === "stop") return stopBifrost(stateDir)
   return startBifrost(pluginInput, config, request)
 }
@@ -352,7 +375,11 @@ export async function BifrostPlugin(pluginInput, options) {
     },
     "command.execute.before": async (input, output) => {
       if (input.command !== config.commandName) return
-      addTextOutput(output, await runBifrost(pluginInput, config, input.arguments || ""))
+      addTextOutput(output, await runBifrost(pluginInput, config, input.arguments || "", input.sessionID || ""))
+    },
+    "shell.env": async (input, output) => {
+      if (!input.sessionID) return
+      output.env.BIFROST_SESSION_ID = input.sessionID
     },
   }
 }
