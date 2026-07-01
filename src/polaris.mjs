@@ -56,8 +56,10 @@ Phase 4: implementation
 
 Phase 5: final review and repair
 1. Run ${options.reviewCommand} semantics against the final diff, branch, or described deliverable.
-2. Repair every actionable finding, rerun relevant verification, then review again.
-3. Repeat until review is clean or a genuine unresolved blocker remains.
+2. If the task is a GitHub PR review, follow ${options.reviewCommand}'s GitHub PR mode: inspect the existing checkout first, avoid a temp clone/worktree unless the current repo is not already on the PR head branch/SHA, post grouped inline review comments for confirmed findings, and clean up any temp clone/worktree before reporting.
+3. If review subagents fail because their configured model is unavailable, retry with an available/current active model when possible; otherwise continue the review manually in the current session rather than stopping.
+4. Repair every actionable finding, rerun relevant verification, then review again.
+5. Repeat until review is clean or a genuine unresolved blocker remains.
 
 Loop control:
 - Maximum orchestration loops: ${options.maxOrchestrationLoops}.
@@ -72,6 +74,8 @@ Final report:
 - Files/artifacts changed.
 - Outcome tests, verification commands, and results.
 - Final ${options.reviewCommand} verdict.
+- Inline PR comments posted, skipped, or failed, if PR review mode was used.
+- Temporary worktree or clone cleanup status, if one was created.
 - AgentDB/Agent Wisdom memory used or stored, if any.
 - Residual non-blocking risks.
 

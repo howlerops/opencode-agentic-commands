@@ -38,6 +38,8 @@ Phase 4: implementation
 
 Phase 5: final review and repair
 - Run `/skuld` semantics against the final diff, branch, or described deliverable.
+- If this is a GitHub PR review, use `/skuld` GitHub PR mode: inspect the current checkout first, avoid temp worktrees unless needed, post grouped inline comments for confirmed findings, and clean up temporary clones/worktrees before reporting.
+- If review subagents fail because their configured model is unavailable, retry with an available/current active model when possible; otherwise continue manually instead of stopping.
 - Repair every actionable finding, rerun relevant verification, then review again.
 - Repeat until review is clean or a genuine unresolved blocker remains.
 
@@ -49,6 +51,8 @@ Final report:
 - Files/artifacts changed.
 - Outcome tests, verification commands, and results.
 - Final `/skuld` verdict.
+- Inline PR comments posted, skipped, or failed, if PR review mode was used.
+- Temporary worktree or clone cleanup status, if one was created.
 - AgentDB/Agent Wisdom memory used or stored, if any.
 - Residual non-blocking risks.
 

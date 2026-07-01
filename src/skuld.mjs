@@ -30,9 +30,21 @@ Review setup:
 1. Confirm the repo status and identify the review target: current worktree diff, branch, PR, commit range, or user-described files.
 2. Read the relevant implementation, tests, docs, schemas, migrations, and public API surfaces before judging.
 3. Prefer a dedicated review subagent when available: ${options.reviewerAgent}.
-4. Prefer subagents when available: ${options.preferSubagents ? "yes" : "no"}.
+4. If a subagent fails because its configured model is unavailable, immediately retry with an available/current active model if the tool supports model selection. If retry is not available, continue the review manually in the current session instead of stopping.
 5. Maximum parallel review subagents: ${options.maxParallelSubagents}.
 6. For large changes, split review by domain or file area, then merge and deduplicate findings.
+
+GitHub PR review mode:
+- Use this mode when the target is a GitHub PR URL, PR number, or branch with a clear GitHub repository.
+- Fetch PR metadata first with gh so you know the base branch, head branch, head SHA, changed files, and CI status.
+- Before creating a temporary worktree, check whether the current directory is already the target repository on the PR head branch or head SHA. If yes, use the current checkout after confirming the worktree is clean enough for read-only review.
+- Only clone or create a temporary worktree when the current directory is not the target repository, is on the wrong branch/SHA, has conflicting local changes, or the PR cannot be inspected safely in place.
+- If you create a temporary clone/worktree or payload file, clean it up before the final response unless the user asks to keep it.
+- Review against the PR base using a three-dot diff. Prefer concrete changed-line anchors that GitHub can attach to the PR diff.
+- Post comments only after confirming the finding against source, not from a diff hunch alone.
+- For multiple findings, prefer one grouped GitHub review with inline comments via gh api pulls/{number}/reviews rather than separate loose comments.
+- Newly added files may report null line fields through the API after posting even when the comment is correctly anchored by diff position; verify the review comment count and paths after submission.
+- If GitHub posting fails, report the exact API/tool error and provide the comments with path and line so the user can post them manually.
 
 Review focus:
 - Correctness bugs and behavioral regressions.
@@ -64,6 +76,8 @@ Final response:
 - Review target.
 - Review loop ledger.
 - Findings fixed.
+- Inline PR comments posted, skipped, or failed, with links when available.
+- Temporary worktree or clone cleanup status, if one was created.
 - Verification commands and results.
 - Final reviewer verdict.
 - Residual non-blocking risks, if any.`

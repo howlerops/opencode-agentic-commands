@@ -15,6 +15,14 @@ const DEFAULT_OPTIONS = {
   skuld: {},
   polaris: {},
   memory: {},
+  modelFallback: {},
+}
+
+const DEFAULT_MODEL_FALLBACK_OPTIONS = {
+  enabled: true,
+  model: "",
+  prefixes: ["anthropic/claude-3", "anthropic/claude-2", "anthropic/claude-instant"],
+  models: [],
 }
 
 const DEFAULT_MEMORY_OPTIONS = {
@@ -39,6 +47,34 @@ function normalizeMemoryOptions(options = {}) {
   return {
     agentdb: { ...DEFAULT_MEMORY_OPTIONS.agentdb, ...(options.agentdb || {}) },
     agentWisdom: { ...DEFAULT_MEMORY_OPTIONS.agentWisdom, ...(options.agentWisdom || {}) },
+  }
+}
+
+function normalizeModelFallbackOptions(options = {}) {
+  return {
+    ...DEFAULT_MODEL_FALLBACK_OPTIONS,
+    ...options,
+    prefixes: options.prefixes || DEFAULT_MODEL_FALLBACK_OPTIONS.prefixes,
+    models: options.models || DEFAULT_MODEL_FALLBACK_OPTIONS.models,
+  }
+}
+
+function shouldFallbackModel(model, options) {
+  if (typeof model !== "string") return false
+  if (options.models.includes(model)) return true
+  return options.prefixes.some((prefix) => model.startsWith(prefix))
+}
+
+export function applyModelFallbackConfig(opencodeConfig, options = {}) {
+  const fallback = normalizeModelFallbackOptions(options)
+  if (!fallback.enabled || !opencodeConfig.agent) return
+
+  const replacement = fallback.model || opencodeConfig.model
+  if (!replacement) return
+
+  for (const agent of Object.values(opencodeConfig.agent)) {
+    if (!agent || typeof agent !== "object") continue
+    if (shouldFallbackModel(agent.model, fallback)) agent.model = replacement
   }
 }
 
@@ -108,6 +144,7 @@ export async function AgenticCommandsPlugin(input, options = {}) {
 
   return {
     config(opencodeConfig) {
+      applyModelFallbackConfig(opencodeConfig, config.modelFallback)
       applyMemoryConfig(opencodeConfig, config.memory)
       for (const hooks of hooksList) hooks.config?.(opencodeConfig)
     },

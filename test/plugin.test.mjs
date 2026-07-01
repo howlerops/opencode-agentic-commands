@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
+import AgenticCommandsPlugin, { EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin, applyModelFallbackConfig } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -21,6 +21,32 @@ async function expands(plugin, slash, expected, options) {
     tyr: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
   assert.deepEqual(Object.keys(commands).sort(), ["eitri", "hugin", "munin", "polaris", "skuld", "tyr", "vidar"])
+}
+
+{
+  const config = {
+    model: "openai/gpt-5.5",
+    agent: {
+      reviewer: { model: "anthropic/claude-3-opus-20240229" },
+      builder: { model: "anthropic/claude-3-5-sonnet-20241022" },
+      current: { model: "openai/gpt-5.5" },
+    },
+  }
+  applyModelFallbackConfig(config)
+  assert.equal(config.agent.reviewer.model, "openai/gpt-5.5")
+  assert.equal(config.agent.builder.model, "openai/gpt-5.5")
+  assert.equal(config.agent.current.model, "openai/gpt-5.5")
+}
+
+{
+  const config = {
+    model: "openai/gpt-5.5",
+    agent: {
+      reviewer: { model: "anthropic/claude-3-opus-20240229" },
+    },
+  }
+  applyModelFallbackConfig(config, { enabled: false })
+  assert.equal(config.agent.reviewer.model, "anthropic/claude-3-opus-20240229")
 }
 
 {

@@ -16,6 +16,45 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 | `/skuld` | Review | You want PR-style review, targeted repair, re-verification, and repeated review until clean. |
 | `/polaris` | Orchestrate | You want the whole flow: plan, create agents if needed, research, implement, review, and repair. |
 
+## GitHub PR Review Mode
+
+`/skuld` has an explicit GitHub PR review path. When the target is a PR URL, PR number, or branch with a clear GitHub repository, it should:
+
+- Fetch PR metadata first with `gh` so it knows the base branch, head branch, head SHA, changed files, and CI status.
+- Use the current checkout when it is already the target repo on the PR head branch or SHA.
+- Create a temporary clone or worktree only when the current directory is not the target repo, is on the wrong branch/SHA, has conflicting local changes, or cannot inspect the PR safely in place.
+- Confirm every finding against source before posting; do not post from a diff hunch alone.
+- Prefer one grouped GitHub review with inline comments via `gh api pulls/{number}/reviews`.
+- Clean up temporary clones, worktrees, and payload files before reporting unless asked to keep them.
+
+If a review subagent fails because its configured model is unavailable, `/skuld` should retry with an available/current active model when tooling supports that. If it cannot retry, it should continue the review manually in the current session rather than stopping.
+
+## Model Fallback
+
+Imported agent packs often pin deprecated provider-specific models such as old `anthropic/claude-3-*` IDs. By default, the bundled plugin rewrites those legacy agent model pins to the current active OpenCode `model` during config load so subagents do not fail before doing work.
+
+Override the replacement model or disable the behavior:
+
+```json
+{
+  "plugin": [
+    [
+      "opencode-agentic-commands",
+      {
+        "modelFallback": {
+          "enabled": true,
+          "model": "openai/gpt-5.5",
+          "prefixes": ["anthropic/claude-3", "anthropic/claude-2", "anthropic/claude-instant"],
+          "models": []
+        }
+      }
+    ]
+  ]
+}
+```
+
+Leave `model` empty to use the active OpenCode `model` value.
+
 ## Quick Start
 
 Install from a local checkout in `~/.config/opencode/opencode.json`:
@@ -160,6 +199,12 @@ All options are optional. This block shows the defaults and the new command keys
           "reviewCommand": "/skuld",
           "maxOrchestrationLoops": 20,
           "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
+        },
+        "modelFallback": {
+          "enabled": true,
+          "model": "",
+          "prefixes": ["anthropic/claude-3", "anthropic/claude-2", "anthropic/claude-instant"],
+          "models": []
         }
       }
     ]
