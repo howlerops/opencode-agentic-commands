@@ -121,14 +121,22 @@ Original goal:
 ${args}
 
 Operating principle:
+- Treat this command as the execution anchor for the whole task. Start by establishing enough context to make and update a durable plan, then keep that plan current through every loop.
 - Do not stop after one pass.
 - Treat each pass as incomplete until a critic review explicitly confirms the full task is done.
 - Do not exit early because work is large, tests fail, review findings remain, context is uncomfortable, or another loop is needed.
 - Only stop before completion when you hit a concrete blocker you cannot resolve with available tools, repo context, user-provided information, and reasonable implementation choices.
 - When you hit a possible blocker, first try to resolve it: inspect more files, run narrower checks, simplify the approach, repair the failure, or ask one concise clarifying question if missing user input is the only blocker.
 
+Phase 0: context research and anchor plan
+- Before editing, perform extensive context research across the repo: docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
+- Produce a context research dossier with file references, commands run, key architecture findings, impacted surfaces, constraints, and patterns to preserve.
+- Maintain an assumption and question ledger. Ask only if missing user input blocks a safe decision; otherwise make the smallest reasonable decision and record it.
+- Produce or update the anchor plan: success criteria, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
+- Keep the anchor plan current after every implementation, critic, and PR-review loop. Do not let the work drift away from the researched plan.
+
 Phase 1: implementation loop
-- Use /goal semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize.
+- Use /goal semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
 - If work remains, start another targeted loop instead of exiting.
 
 Phase 2: critic-driven loops
@@ -153,7 +161,24 @@ Hard stop rule:
 Goal:
 ${args}
 
-Produce a dependency-aware story DAG with success criteria, current-state findings, architecture decisions, parallel-safe lanes, serialized integration points, risks, verification matrix, and review gates. Run a separate review pass over the plan when possible, revise concrete flaws, then present the approved plan and recommended first execution command.`,
+Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /goal or /ultrawork safely.
+
+Planning principles:
+- Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
+- Build a context research dossier with file references and evidence. Separate facts observed in the repo from assumptions, inferences, and open questions.
+- Trace the impacted surfaces end to end: user/API entrypoints, service boundaries, persistence, side effects, errors, logging/observability, tests, and docs.
+- Convert the goal into a dependency-aware story DAG, not a flat checklist.
+
+Plan structure:
+1. Goal restatement and success criteria.
+2. Context research dossier: source map, files read, commands run, architecture findings, patterns to preserve, and evidence-backed constraints.
+3. Assumption and question ledger: what is known, what is inferred, what needs user input, and what can be safely decided without asking.
+4. Architecture decision record: chosen approach, alternatives rejected, compatibility concerns, and migration strategy.
+5. Story DAG: inputs, outputs, dependencies, likely files, verification, and whether parallel execution is safe.
+6. Execution schedule: parallel lanes first, then serialized integration points.
+7. Risk register, verification matrix, and review gates.
+
+Run a separate review pass over the plan when possible, revise concrete flaws, then present the approved, self-contained plan and recommended first execution command.`,
   },
   ultrareview: {
     description: "Review and repair a diff repeatedly until no actionable PR-review findings remain.",

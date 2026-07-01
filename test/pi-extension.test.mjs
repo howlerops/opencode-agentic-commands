@@ -33,6 +33,10 @@ for (const [name, command] of registered) {
 }
 
 assert.match(COMMANDS.ultrawork.render("ship it"), /Only stop before completion when you hit a concrete blocker/)
+assert.match(COMMANDS.ultrawork.render("ship it"), /Phase 0: context research and anchor plan/)
+assert.match(COMMANDS.ultrawork.render("ship it"), /context research dossier/)
+assert.match(COMMANDS.ultraplan.render("ship it"), /extensive context research/)
+assert.match(COMMANDS.ultraplan.render("ship it"), /Assumption and question ledger/)
 assert.match(COMMANDS.ultrareview.render("current diff"), /Review target:\ncurrent diff/)
 
 for (const name of registered.keys()) {

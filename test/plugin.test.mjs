@@ -54,6 +54,9 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /critic confirms no remaining required work/)
   assert.match(text, /Only stop before completion when you hit a concrete blocker/)
   assert.match(text, /do not call the task complete and do not exit/)
+  assert.match(text, /Phase 0: context research and anchor plan/)
+  assert.match(text, /context research dossier/)
+  assert.match(text, /anchor plan/)
 }
 
 {
@@ -61,6 +64,9 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /ship payments/)
   assert.match(text, /Story DAG/)
   assert.match(text, /Maximum parallel subagents to assume: 4/)
+  assert.match(text, /extensive context research/)
+  assert.match(text, /Context research dossier/)
+  assert.match(text, /Assumption and question ledger/)
 }
 
 {

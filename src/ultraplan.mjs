@@ -22,7 +22,10 @@ Output artifact:
 - ${options.outputArtifact}.
 
 Planning principles:
-- Inspect the repo and available documentation before deciding architecture.
+- Treat this command as the anchor for all downstream work: no implementation should start until this plan has enough context to guide /goal or /ultrawork safely.
+- Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
+- Build a context research dossier with file references and evidence. Separate facts observed in the repo from assumptions, inferences, and open questions.
+- Trace the impacted surfaces end to end: user/API entrypoints, service boundaries, persistence, side effects, errors, logging/observability, tests, and docs.
 - Convert the goal into a dependency-aware story DAG, not a flat checklist.
 - Identify stories that can safely run in parallel and stories that must be serialized.
 - Maximum parallel subagents to assume: ${options.maxParallelSubagents}.
@@ -30,13 +33,15 @@ Planning principles:
 
 Plan structure:
 1. Goal restatement and success criteria.
-2. Current-state findings with file references where available.
-3. Architecture decision record: chosen approach, alternatives rejected, compatibility concerns, and migration strategy.
-4. Story DAG: each story must include inputs, outputs, dependencies, files likely touched, verification, and whether subagent execution is safe.
-5. Execution schedule: parallel lanes first, then serialized integration points.
-6. Risk register: behavioral, security, data, performance, and operational risks with mitigations.
-7. Verification matrix: narrow checks per story and broad final checks.
-8. Review gates: when critic/reviewer passes should run and what they must approve.
+2. Context research dossier: source map, files read, commands run, architecture findings, patterns to preserve, and evidence-backed constraints.
+3. Assumption and question ledger: what is known, what is inferred, what needs user input, and what can be safely decided without asking.
+4. Current-state findings with file references where available.
+5. Architecture decision record: chosen approach, alternatives rejected, compatibility concerns, and migration strategy.
+6. Story DAG: each story must include inputs, outputs, dependencies, files likely touched, verification, and whether subagent execution is safe.
+7. Execution schedule: parallel lanes first, then serialized integration points.
+8. Risk register: behavioral, security, data, performance, and operational risks with mitigations.
+9. Verification matrix: narrow checks per story and broad final checks.
+10. Review gates: when critic/reviewer passes should run and what they must approve.
 
 Independent verification:
 - Run a separate review pass over the plan when possible, preferably through a subagent with no implementation context.
@@ -46,6 +51,7 @@ Independent verification:
 Final response:
 - Present the approved plan only after the verification pass.
 - Include unresolved questions only if they block correct implementation.
+- Make the plan self-contained enough that a fresh worker can execute it without repeating discovery.
 - End with the recommended first execution command, usually /goal or /ultrawork with the highest-priority story or full goal.`
 }
 

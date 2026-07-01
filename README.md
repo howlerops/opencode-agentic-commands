@@ -6,7 +6,7 @@ OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
 - `/autoresearch` - karpathy/autoresearch-style experiment loop with baseline, metric tracking, keep/discard decisions, and an experiment ledger.
 - `/autoagent` - AutoAgent-style natural-language agent/workflow creation using opencode-native artifacts.
 - `/ultrawork` - repeated `/goal` implementation loops plus PR-review repair loops until a critic finds nothing left.
-- `/ultraplan` - verified dependency-aware planning with story DAGs, parallel lanes, risks, and review gates before implementation.
+- `/ultraplan` - anchor planning with extensive context research, story DAGs, parallel lanes, risks, and review gates before implementation.
 - `/ultrareview` - repeated PR-style review and repair loops until no actionable findings remain.
 
 For Pi, the package exposes all six commands as Pi extensions and prompt templates.
@@ -194,8 +194,8 @@ You can install only one command by using subpath exports:
 - Commands appear in the OpenCode TUI slash-command list after restart.
 - No custom TUI screen is included; the TUI already exposes custom slash commands and descriptions.
 - `/goal` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
-- `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It prefers subagents for independent stories and review passes when safe, and should only stop before completion for a concrete blocker it cannot resolve.
-- `/ultraplan` is intentionally non-mutating by default: it plans, reviews the plan, and recommends the first execution command.
+- `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It starts with a context research dossier and anchor plan, keeps that plan current through every loop, and should only stop before completion for a concrete blocker it cannot resolve.
+- `/ultraplan` is intentionally non-mutating by default: it performs extensive context research, produces a self-contained anchor plan, reviews the plan, and recommends the first execution command.
 - `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
 - `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention.
 - `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.

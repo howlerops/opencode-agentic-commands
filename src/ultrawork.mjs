@@ -23,6 +23,7 @@ Original goal:
 $ARGUMENTS
 
 Operating principle:
+- Treat this command as the execution anchor for the whole task. Start by establishing enough context to make and update a durable plan, then keep that plan current through every loop.
 - Do not stop after one pass.
 - Treat each pass as incomplete until a critic review explicitly confirms the full task is done.
 - Do not exit early because work is large, tests fail, review findings remain, context is uncomfortable, or another loop is needed.
@@ -30,6 +31,13 @@ Operating principle:
 - When you hit a possible blocker, first try to resolve it: inspect more files, run narrower checks, simplify the approach, repair the failure, or ask one concise clarifying question if missing user input is the only blocker.
 - Use ${options.goalCommand} semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize.
 - Completion standard: ${options.completionStandard}.
+
+Phase 0: context research and anchor plan
+1. Before editing, perform extensive context research across the repo: docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
+2. Produce a context research dossier with file references, commands run, key architecture findings, impacted surfaces, constraints, and patterns to preserve.
+3. Maintain an assumption and question ledger. Ask only if missing user input blocks a safe decision; otherwise make the smallest reasonable decision and record it.
+4. Produce or update the anchor plan: success criteria, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
+5. Keep the anchor plan current after every implementation, critic, and PR-review loop. Do not let the work drift away from the researched plan.
 
 Parallelism and subagents:
 - Prefer subagents when available: ${options.preferSubagents ? "yes" : "no"}.
@@ -46,7 +54,7 @@ Loop limits:
 Phase 1: initial goal execution
 1. Start with this implementation loop prompt:
    ${options.goalCommand} $ARGUMENTS
-2. Execute the goal loop end-to-end, including verification.
+2. Execute the goal loop end-to-end, including verification, using the Phase 0 context dossier and anchor plan as the controlling source of truth.
 3. During the story DAG step, dispatch independent stories to subagents where safe. Each subagent must report:
    - Story goal
    - Files read/changed
@@ -55,6 +63,7 @@ Phase 1: initial goal execution
    - Handoff notes for dependent stories
 4. Produce a loop ledger entry with:
    - Loop number
+   - Context or plan updates
    - Goal attempted
    - Work completed
    - Files changed
