@@ -17,6 +17,7 @@ assert.deepEqual([...registered.keys()].sort(), [
   "autoagent",
   "autoresearch",
   "goal",
+  "thanos",
   "ultraplan",
   "ultrareview",
   "ultrawork",
@@ -44,6 +45,8 @@ assert.match(COMMANDS.ultraplan.render("ship it"), /Assumption and question ledg
 assert.match(COMMANDS.ultraplan.render("ship it"), /AgentDB\/Agent Wisdom recall/)
 assert.match(COMMANDS.autoresearch.render("skills"), /commands, skills, extensions, or prompts/)
 assert.match(COMMANDS.autoresearch.render("skills"), /Do not install or start long-lived AgentDB services/)
+assert.match(COMMANDS.thanos.render("ship it"), /\/ultraplan, \/goal, \/autoagent, \/autoresearch, \/ultrawork, and \/ultrareview/)
+assert.match(COMMANDS.thanos.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
 assert.match(COMMANDS.ultrareview.render("current diff"), /Review target:\ncurrent diff/)
 
 for (const name of registered.keys()) {

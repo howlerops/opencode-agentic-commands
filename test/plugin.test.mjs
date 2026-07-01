@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { AutoagentPlugin, AutoresearchPlugin, GoalPlugin, UltraplanPlugin, UltrareviewPlugin, UltraworkPlugin } from "../src/index.mjs"
+import AgenticCommandsPlugin, { AutoagentPlugin, AutoresearchPlugin, GoalPlugin, ThanosPlugin, UltraplanPlugin, UltrareviewPlugin, UltraworkPlugin } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -20,7 +20,7 @@ async function expands(plugin, slash, expected, options) {
   const { commands } = await commandsFrom(AgenticCommandsPlugin, {
     goal: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
-  assert.deepEqual(Object.keys(commands).sort(), ["autoagent", "autoresearch", "goal", "ultraplan", "ultrareview", "ultrawork"])
+  assert.deepEqual(Object.keys(commands).sort(), ["autoagent", "autoresearch", "goal", "thanos", "ultraplan", "ultrareview", "ultrawork"])
 }
 
 {
@@ -80,6 +80,17 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /current diff/)
   assert.match(text, /Review loop ledger/)
   assert.match(text, /Maximum parallel review subagents: 4/)
+}
+
+{
+  const text = await expands(ThanosPlugin, "/thanos ship the full platform", /Run this task in Thanos mode/)
+  assert.match(text, /ship the full platform/)
+  assert.match(text, /\/ultraplan/)
+  assert.match(text, /\/autoagent/)
+  assert.match(text, /\/autoresearch/)
+  assert.match(text, /\/ultrawork/)
+  assert.match(text, /\/ultrareview/)
+  assert.match(text, /Do not call the task complete until planning, implementation, measurable outcome checks, and final review all find no remaining required work/)
 }
 
 console.log("plugin tests passed")

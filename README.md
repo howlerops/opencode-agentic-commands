@@ -8,8 +8,9 @@ OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
 - `/ultrawork` - repeated `/goal` implementation loops plus PR-review repair loops until a critic finds nothing left.
 - `/ultraplan` - anchor planning with extensive context research, story DAGs, parallel lanes, risks, and review gates before implementation.
 - `/ultrareview` - repeated PR-style review and repair loops until no actionable findings remain.
+- `/thanos` - top-level E2E orchestrator that composes `/ultraplan`, `/goal`, `/autoagent`, `/autoresearch`, `/ultrawork`, and `/ultrareview`.
 
-For Pi, the package exposes all six commands as Pi extensions and prompt templates.
+For Pi, the package exposes all seven commands as Pi extensions and prompt templates.
 
 ## Install
 
@@ -62,6 +63,7 @@ The Pi extension registers these slash commands directly:
 - `/ultrawork`
 - `/ultraplan`
 - `/ultrareview`
+- `/thanos`
 
 The prompt templates in `pi/prompts/` provide static fallbacks for the same command names and make the workflows browsable/configurable as plain Markdown.
 
@@ -77,6 +79,7 @@ Then restart Pi or run `/reload`, and use:
 /goal Add JWT authentication with role-based access control
 /ultrawork Finish the checkout flow until review is clean
 /ultrareview current diff
+/thanos Ship the billing integration end to end
 ```
 
 ### GitHub
@@ -179,6 +182,16 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
           "preferSubagents": true,
           "maxParallelSubagents": 4,
           "completionStandard": "review finds no actionable bugs, regressions, missing required tests, or unresolved risks"
+        },
+        "thanos": {
+          "planCommand": "/ultraplan",
+          "goalCommand": "/goal",
+          "agentCommand": "/autoagent",
+          "researchCommand": "/autoresearch",
+          "workCommand": "/ultrawork",
+          "reviewCommand": "/ultrareview",
+          "maxOrchestrationLoops": 20,
+          "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
         }
       }
     ]
@@ -198,7 +211,8 @@ You can install only one command by using subpath exports:
     ["opencode-agentic-commands/autoagent", { "completionModel": "openai/gpt-5.3-codex-spark" }],
     ["opencode-agentic-commands/ultrawork", { "maxGoalLoops": 20 }],
     ["opencode-agentic-commands/ultraplan", { "maxParallelSubagents": 4 }],
-    ["opencode-agentic-commands/ultrareview", { "maxReviewLoops": 10 }]
+    ["opencode-agentic-commands/ultrareview", { "maxReviewLoops": 10 }],
+    ["opencode-agentic-commands/thanos", { "maxOrchestrationLoops": 20 }]
   ]
 }
 ```
@@ -213,7 +227,8 @@ You can install only one command by using subpath exports:
 - `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
 - `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention. For commands, skills, extensions, and prompts, it should define repeatable outcome tests before editing: expansion invariants, package load checks, command registration checks, prompt regression assertions, and before/after smoke comparisons where feasible.
 - `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
-- In Pi, `pi/extensions/agentic-commands.js` registers all six commands and `pi/prompts/` ships matching prompt templates.
+- `/thanos` is the highest-level orchestrator. Use it when the task should be carried from context research and planning through agent/workflow design, measurable optimization, implementation, final review, and repair.
+- In Pi, `pi/extensions/agentic-commands.js` registers all seven commands and `pi/prompts/` ships matching prompt templates.
 
 ## Test
 

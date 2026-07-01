@@ -4,6 +4,7 @@ import { AutoagentPlugin } from "./autoagent.mjs"
 import { UltraworkPlugin } from "./ultrawork.mjs"
 import { UltraplanPlugin } from "./ultraplan.mjs"
 import { UltrareviewPlugin } from "./ultrareview.mjs"
+import { ThanosPlugin } from "./thanos.mjs"
 
 const DEFAULT_OPTIONS = {
   goal: {},
@@ -12,6 +13,7 @@ const DEFAULT_OPTIONS = {
   ultrawork: {},
   ultraplan: {},
   ultrareview: {},
+  thanos: {},
 }
 
 function chainHooks(hooksList, hookName) {
@@ -32,6 +34,7 @@ export async function AgenticCommandsPlugin(input, options = {}) {
     await UltraworkPlugin(input, config.ultrawork),
     await UltraplanPlugin(input, config.ultraplan),
     await UltrareviewPlugin(input, config.ultrareview),
+    await ThanosPlugin(input, config.thanos),
   ]
 
   return {
@@ -49,5 +52,6 @@ export { AutoagentPlugin } from "./autoagent.mjs"
 export { UltraworkPlugin } from "./ultrawork.mjs"
 export { UltraplanPlugin } from "./ultraplan.mjs"
 export { UltrareviewPlugin } from "./ultrareview.mjs"
+export { ThanosPlugin } from "./thanos.mjs"
 
 export default AgenticCommandsPlugin

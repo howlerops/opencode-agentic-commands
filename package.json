@@ -12,7 +12,8 @@
     "./autoagent": "./src/autoagent.mjs",
     "./ultrawork": "./src/ultrawork.mjs",
     "./ultraplan": "./src/ultraplan.mjs",
-    "./ultrareview": "./src/ultrareview.mjs"
+    "./ultrareview": "./src/ultrareview.mjs",
+    "./thanos": "./src/thanos.mjs"
   },
   "files": [
     "src",
@@ -42,6 +43,7 @@
     "ultrawork",
     "ultraplan",
     "ultrareview",
+    "thanos",
     "agentic"
   ],
   "peerDependencies": {
