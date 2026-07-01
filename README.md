@@ -97,6 +97,20 @@ pi install npm:opencode-agentic-commands
 
 Pi extension commands are loaded from `pi/extensions/agentic-commands.js`. Prompt templates are static Markdown. To change prompt defaults, edit files in `pi/prompts/` or create project-local `.pi/prompts/<command>.md` files that override them.
 
+### Optional AgentDB Memory
+
+This package declares `agentdb` as an optional dependency so Pi/npm/git installs can make the CLI available without making memory a hard requirement.
+
+Use AgentDB as an optional recall/store layer:
+
+```bash
+npx agentdb@latest mcp start
+```
+
+Commands that do context research (`/ultraplan`, `/ultrawork`, `/autoresearch`) should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, the commands should skip them quietly and continue from repo sources. Optional memory must not become a blocker or create repeated "unavailable" narration.
+
+Pi extension docs explicitly warn against starting long-lived resources in extension factory startup, so this package does not auto-start AgentDB. Start it through your agent harness MCP config, a project-local extension, or an explicit user command.
+
 ### Pi Package Manifest
 
 ```json
@@ -197,7 +211,7 @@ You can install only one command by using subpath exports:
 - `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It starts with a context research dossier and anchor plan, keeps that plan current through every loop, and should only stop before completion for a concrete blocker it cannot resolve.
 - `/ultraplan` is intentionally non-mutating by default: it performs extensive context research, produces a self-contained anchor plan, reviews the plan, and recommends the first execution command.
 - `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
-- `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention.
+- `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention. For commands, skills, extensions, and prompts, it should define repeatable outcome tests before editing: expansion invariants, package load checks, command registration checks, prompt regression assertions, and before/after smoke comparisons where feasible.
 - `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
 - In Pi, `pi/extensions/agentic-commands.js` registers all six commands and `pi/prompts/` ships matching prompt templates.
 

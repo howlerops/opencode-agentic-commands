@@ -35,9 +35,11 @@ Operating principle:
 Phase 0: context research and anchor plan
 1. Before editing, perform extensive context research across the repo: docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
 2. Produce a context research dossier with file references, commands run, key architecture findings, impacted surfaces, constraints, and patterns to preserve.
-3. Maintain an assumption and question ledger. Ask only if missing user input blocks a safe decision; otherwise make the smallest reasonable decision and record it.
-4. Produce or update the anchor plan: success criteria, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
-5. Keep the anchor plan current after every implementation, critic, and PR-review loop. Do not let the work drift away from the researched plan.
+3. Optional memory: if AgentDB MCP/tools, Agent Wisdom, or the agentdb CLI are already available, recall relevant past episodes, successful patterns, critiques, and skill lessons. If unavailable, skip them quietly and continue from repo sources; optional memory is not a blocker and should not create noisy failure narration.
+4. Maintain an assumption and question ledger. Ask only if missing user input blocks a safe decision; otherwise make the smallest reasonable decision and record it.
+5. Produce or update the anchor plan: success criteria, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
+6. Keep the anchor plan current after every implementation, critic, and PR-review loop. Do not let the work drift away from the researched plan.
+7. If AgentDB is available and the work produces a durable lesson, store the successful pattern, failure critique, or review finding after verification. Do not install or start long-lived AgentDB services from inside the work loop unless the user explicitly asks.
 
 Parallelism and subagents:
 - Prefer subagents when available: ${options.preferSubagents ? "yes" : "no"}.

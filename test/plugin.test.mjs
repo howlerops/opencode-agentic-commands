@@ -32,6 +32,8 @@ async function expands(plugin, slash, expected, options) {
   const text = await expands(AutoresearchPlugin, "/autoresearch improve bpb", /uv run train\.py/)
   assert.match(text, /val_bpb/)
   assert.match(text, /improve bpb/)
+  assert.match(text, /AgentDB MCP\/tools/)
+  assert.match(text, /commands, skills, extensions, or prompts/)
 }
 
 {
@@ -57,6 +59,8 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /Phase 0: context research and anchor plan/)
   assert.match(text, /context research dossier/)
   assert.match(text, /anchor plan/)
+  assert.match(text, /optional memory is not a blocker/)
+  assert.match(text, /Do not install or start long-lived AgentDB services/)
 }
 
 {
@@ -67,6 +71,8 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /extensive context research/)
   assert.match(text, /Context research dossier/)
   assert.match(text, /Assumption and question ledger/)
+  assert.match(text, /AgentDB\/Agent Wisdom recall/)
+  assert.match(text, /noisy failure narration/)
 }
 
 {

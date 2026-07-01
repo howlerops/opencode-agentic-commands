@@ -56,6 +56,7 @@ Use this process:
 - Treat protected files as read-only unless the objective explicitly requires otherwise: prepare.py.
 - If program.md exists, treat it as the research org instructions. If not, infer a concise local research protocol from project docs.
 - Use setup command when needed and feasible: uv sync && uv run prepare.py.
+- Optional memory: if AgentDB MCP/tools or the agentdb CLI are already available, retrieve relevant prior episodes, skill patterns, or critiques before choosing experiments. If unavailable, continue silently from repo sources; optional memory is never a blocker.
 
 2. Baseline
 - Run or identify the baseline experiment command: uv run train.py.
@@ -66,6 +67,7 @@ Use this process:
 3. Experiment ledger
 - Maintain an experiment ledger in the conversation with hypothesis, files changed, command, metric, result, decision, and next idea.
 - Keep diffs small and reversible.
+- If the objective is improving commands, skills, extensions, or prompts, define outcome tests before editing: expansion invariants, package install/load checks, command registration checks, prompt regression assertions, and at least one before/after smoke comparison where feasible.
 
 4. Iteration loop
 - Propose one hypothesis at a time.
@@ -74,7 +76,11 @@ Use this process:
 - Compare against the current best using the declared metric.
 - Keep improvements; revert or supersede failed changes with a clear reason. Never fabricate results.
 
-5. Final report
+5. Research judgement
+- For skill/extension work, prefer changes that improve repeatable outcome evidence over changes that only make prompts longer.
+- If AgentDB is available and an experiment yields a durable lesson, store the successful pattern, failure critique, or evaluation result for future recall. Do not install or start long-lived AgentDB services from inside the research loop unless the user explicitly asks.
+
+6. Final report
 - Report best result, full experiment ledger, final diff summary, exact commands run, artifacts/logs, and recommended next experiments.`,
   },
   autoagent: {
@@ -131,9 +137,11 @@ Operating principle:
 Phase 0: context research and anchor plan
 - Before editing, perform extensive context research across the repo: docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
 - Produce a context research dossier with file references, commands run, key architecture findings, impacted surfaces, constraints, and patterns to preserve.
+- Optional memory: if AgentDB MCP/tools, Agent Wisdom, or the agentdb CLI are already available, recall relevant past episodes, successful patterns, critiques, and skill lessons. If unavailable, skip them quietly and continue from repo sources; optional memory is not a blocker and should not create noisy failure narration.
 - Maintain an assumption and question ledger. Ask only if missing user input blocks a safe decision; otherwise make the smallest reasonable decision and record it.
 - Produce or update the anchor plan: success criteria, story DAG, dependency order, parallel-safe lanes, verification matrix, review gates, and rollback/cleanup considerations.
 - Keep the anchor plan current after every implementation, critic, and PR-review loop. Do not let the work drift away from the researched plan.
+- If AgentDB is available and the work produces a durable lesson, store the successful pattern, failure critique, or review finding after verification. Do not install or start long-lived AgentDB services from inside the work loop unless the user explicitly asks.
 
 Phase 1: implementation loop
 - Use /goal semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize. Use the Phase 0 context dossier and anchor plan as the controlling source of truth.
@@ -166,17 +174,19 @@ Treat this command as the anchor for all downstream work: no implementation shou
 Planning principles:
 - Perform extensive context research before deciding architecture. Inspect repo docs, package/config files, entrypoints, tests, existing patterns, public APIs, data models, migrations, deployment/runtime config, and recent git context when available.
 - Build a context research dossier with file references and evidence. Separate facts observed in the repo from assumptions, inferences, and open questions.
+- Optional memory: if AgentDB MCP/tools, Agent Wisdom, or the agentdb CLI are already available, use them to recall prior successful patterns, critiques, and skill lessons. If unavailable, skip them quietly and continue from repo sources; optional memory is not a blocker and should not create noisy failure narration.
 - Trace the impacted surfaces end to end: user/API entrypoints, service boundaries, persistence, side effects, errors, logging/observability, tests, and docs.
 - Convert the goal into a dependency-aware story DAG, not a flat checklist.
 
 Plan structure:
 1. Goal restatement and success criteria.
 2. Context research dossier: source map, files read, commands run, architecture findings, patterns to preserve, and evidence-backed constraints.
-3. Assumption and question ledger: what is known, what is inferred, what needs user input, and what can be safely decided without asking.
-4. Architecture decision record: chosen approach, alternatives rejected, compatibility concerns, and migration strategy.
-5. Story DAG: inputs, outputs, dependencies, likely files, verification, and whether parallel execution is safe.
-6. Execution schedule: parallel lanes first, then serialized integration points.
-7. Risk register, verification matrix, and review gates.
+3. Memory and prior-art notes: AgentDB/Agent Wisdom recall used, useful lessons found, or "not available; skipped" without treating it as a constraint.
+4. Assumption and question ledger: what is known, what is inferred, what needs user input, and what can be safely decided without asking.
+5. Architecture decision record: chosen approach, alternatives rejected, compatibility concerns, and migration strategy.
+6. Story DAG: inputs, outputs, dependencies, likely files, verification, and whether parallel execution is safe.
+7. Execution schedule: parallel lanes first, then serialized integration points.
+8. Risk register, verification matrix, and review gates.
 
 Run a separate review pass over the plan when possible, revise concrete flaws, then present the approved, self-contained plan and recommended first execution command.`,
   },
