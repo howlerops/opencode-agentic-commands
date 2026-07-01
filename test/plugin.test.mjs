@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { AutoagentPlugin, AutoresearchPlugin, GoalPlugin, UltraworkPlugin } from "../src/index.mjs"
+import AgenticCommandsPlugin, { AutoagentPlugin, AutoresearchPlugin, GoalPlugin, UltraplanPlugin, UltrareviewPlugin, UltraworkPlugin } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -20,7 +20,7 @@ async function expands(plugin, slash, expected, options) {
   const { commands } = await commandsFrom(AgenticCommandsPlugin, {
     goal: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
-  assert.deepEqual(Object.keys(commands).sort(), ["autoagent", "autoresearch", "goal", "ultrawork"])
+  assert.deepEqual(Object.keys(commands).sort(), ["autoagent", "autoresearch", "goal", "ultraplan", "ultrareview", "ultrawork"])
 }
 
 {
@@ -52,6 +52,20 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /PR-review repair loops/)
   assert.match(text, /Maximum parallel subagents: 4/)
   assert.match(text, /critic confirms no remaining required work/)
+}
+
+{
+  const text = await expands(UltraplanPlugin, "/ultraplan ship payments", /Create an ultraplan/)
+  assert.match(text, /ship payments/)
+  assert.match(text, /Story DAG/)
+  assert.match(text, /Maximum parallel subagents to assume: 4/)
+}
+
+{
+  const text = await expands(UltrareviewPlugin, "/ultrareview current diff", /Run an ultrareview/)
+  assert.match(text, /current diff/)
+  assert.match(text, /Review loop ledger/)
+  assert.match(text, /Maximum parallel review subagents: 4/)
 }
 
 console.log("plugin tests passed")

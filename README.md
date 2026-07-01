@@ -6,8 +6,10 @@ OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
 - `/autoresearch` - karpathy/autoresearch-style experiment loop with baseline, metric tracking, keep/discard decisions, and an experiment ledger.
 - `/autoagent` - AutoAgent-style natural-language agent/workflow creation using opencode-native artifacts.
 - `/ultrawork` - repeated `/goal` implementation loops plus PR-review repair loops until a critic finds nothing left.
+- `/ultraplan` - verified dependency-aware planning with story DAGs, parallel lanes, risks, and review gates before implementation.
+- `/ultrareview` - repeated PR-style review and repair loops until no actionable findings remain.
 
-For Pi, the package currently exposes `/goal` as a prompt template.
+For Pi, the package currently exposes `/goal`, `/ultraplan`, and `/ultrareview` as prompt templates.
 
 ## Install
 
@@ -126,6 +128,19 @@ Pi prompt templates are static Markdown. To change the Pi `/goal` defaults, edit
           "preferSubagents": true,
           "maxParallelSubagents": 4,
           "completionStandard": "critic confirms no remaining required work, no unresolved risks, and no PR review findings"
+        },
+        "ultraplan": {
+          "maxParallelSubagents": 4,
+          "outputArtifact": "conversation plan; create a repo file only when the user asks",
+          "verificationStandard": "plan is reviewed for feasibility, dependency order, risks, and test coverage before implementation starts"
+        },
+        "ultrareview": {
+          "reviewerAgent": "code-reviewer",
+          "goalCommand": "/goal",
+          "maxReviewLoops": 10,
+          "preferSubagents": true,
+          "maxParallelSubagents": 4,
+          "completionStandard": "review finds no actionable bugs, regressions, missing required tests, or unresolved risks"
         }
       }
     ]
@@ -143,7 +158,9 @@ You can install only one command by using subpath exports:
     ["opencode-agentic-commands/goal", { "baroModel": "openai/gpt-5.3-codex-spark" }],
     ["opencode-agentic-commands/autoresearch", { "experimentCommand": "uv run train.py" }],
     ["opencode-agentic-commands/autoagent", { "completionModel": "openai/gpt-5.3-codex-spark" }],
-    ["opencode-agentic-commands/ultrawork", { "maxGoalLoops": 20 }]
+    ["opencode-agentic-commands/ultrawork", { "maxGoalLoops": 20 }],
+    ["opencode-agentic-commands/ultraplan", { "maxParallelSubagents": 4 }],
+    ["opencode-agentic-commands/ultrareview", { "maxReviewLoops": 10 }]
   ]
 }
 ```
@@ -154,6 +171,8 @@ You can install only one command by using subpath exports:
 - No custom TUI screen is included; the TUI already exposes custom slash commands and descriptions.
 - `/goal` defaults to using baro's OpenCode backend pointed at an OpenAI/Codex model: `baro --llm opencode -m openai/gpt-5.3-codex-spark "$ARGUMENTS"`.
 - `/ultrawork` composes `/goal` loops with critic checks and a final PR-review loop. It prefers subagents for independent stories and review passes when safe, and should only claim completion when review finds no actionable findings.
+- `/ultraplan` is intentionally non-mutating by default: it plans, reviews the plan, and recommends the first execution command.
+- `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
 - `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention.
 - `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
 

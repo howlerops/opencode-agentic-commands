@@ -1,7 +1,7 @@
 {
   "name": "opencode-agentic-commands",
   "version": "0.1.0",
-  "description": "OpenCode slash-command plugins for baro-style goals, autoresearch loops, and AutoAgent-style workflow generation.",
+  "description": "OpenCode slash-command plugins for baro-style goals, planning, review loops, autoresearch, and AutoAgent-style workflow generation.",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.mjs",
@@ -10,7 +10,9 @@
     "./goal": "./src/goal.mjs",
     "./autoresearch": "./src/autoresearch.mjs",
     "./autoagent": "./src/autoagent.mjs",
-    "./ultrawork": "./src/ultrawork.mjs"
+    "./ultrawork": "./src/ultrawork.mjs",
+    "./ultraplan": "./src/ultraplan.mjs",
+    "./ultrareview": "./src/ultrareview.mjs"
   },
   "files": [
     "src",
@@ -34,6 +36,8 @@
     "autoresearch",
     "autoagent",
     "ultrawork",
+    "ultraplan",
+    "ultrareview",
     "agentic"
   ],
   "peerDependencies": {

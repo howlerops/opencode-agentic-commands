@@ -2,12 +2,16 @@ import { GoalPlugin } from "./goal.mjs"
 import { AutoresearchPlugin } from "./autoresearch.mjs"
 import { AutoagentPlugin } from "./autoagent.mjs"
 import { UltraworkPlugin } from "./ultrawork.mjs"
+import { UltraplanPlugin } from "./ultraplan.mjs"
+import { UltrareviewPlugin } from "./ultrareview.mjs"
 
 const DEFAULT_OPTIONS = {
   goal: {},
   autoresearch: {},
   autoagent: {},
   ultrawork: {},
+  ultraplan: {},
+  ultrareview: {},
 }
 
 function chainHooks(hooksList, hookName) {
@@ -26,6 +30,8 @@ export async function AgenticCommandsPlugin(input, options = {}) {
     await AutoresearchPlugin(input, config.autoresearch),
     await AutoagentPlugin(input, config.autoagent),
     await UltraworkPlugin(input, config.ultrawork),
+    await UltraplanPlugin(input, config.ultraplan),
+    await UltrareviewPlugin(input, config.ultrareview),
   ]
 
   return {
@@ -41,5 +47,7 @@ export { GoalPlugin } from "./goal.mjs"
 export { AutoresearchPlugin } from "./autoresearch.mjs"
 export { AutoagentPlugin } from "./autoagent.mjs"
 export { UltraworkPlugin } from "./ultrawork.mjs"
+export { UltraplanPlugin } from "./ultraplan.mjs"
+export { UltrareviewPlugin } from "./ultrareview.mjs"
 
 export default AgenticCommandsPlugin
