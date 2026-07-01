@@ -5,7 +5,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { createServer } from "node:net"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
+import { addTextOutput } from "./shared.mjs"
 
 const BIFROST_RUNNER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs")
 
@@ -253,7 +253,6 @@ async function runBifrost(pluginInput, config, args) {
 export async function BifrostPlugin(pluginInput, options) {
   const config = normalizeOptions(options)
   const template = bifrostTemplate(config)
-  const commandNames = [config.commandName]
 
   return {
     config(opencodeConfig) {
@@ -263,13 +262,6 @@ export async function BifrostPlugin(pluginInput, options) {
         agent: config.agent,
         template,
       }
-    },
-    "chat.message": async (_input, output) => {
-      const part = firstTextPart(output.parts, commandNames)
-      if (!part) return
-      const match = parseSlash(part.text, commandNames)
-      if (!match) return
-      part.text = replaceArguments(template, match[1] || "")
     },
     "command.execute.before": async (input, output) => {
       if (input.command !== config.commandName) return

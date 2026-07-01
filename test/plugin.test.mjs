@@ -151,14 +151,10 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Run Bifrost now/)
-  assert.match(text, /start port 4141/)
-  assert.match(text, /opencode-bifrost --state-dir '.opencode\/bifrost'/)
-  assert.match(text, /scripts\/bifrost-runner\.mjs/)
-  assert.match(text, /--preferred-tunnel 'cloudflared'/)
-  assert.match(text, /--fallback-tunnel 'ngrok'/)
-  assert.doesNotMatch(text, /Start workflow:/)
-  assert.doesNotMatch(text, /Security:/)
+  const { hooks } = await commandsFrom(BifrostPlugin)
+  const output = { parts: [{ type: "text", text: "/bifrost start port 4141" }] }
+  assert.equal(hooks["chat.message"], undefined)
+  assert.equal(output.parts[0].text, "/bifrost start port 4141")
 }
 
 {
