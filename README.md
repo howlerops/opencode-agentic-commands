@@ -1,6 +1,6 @@
 # opencode-agentic-commands
 
-Agentic slash commands for OpenCode and Pi. The package adds a compact command suite for planning, execution, research, agent creation, persistent work loops, review, and full end-to-end orchestration.
+Agentic slash commands for OpenCode and Pi. The package adds a compact command suite for planning, execution, research, agent creation, persistent work loops, review, remote access, and full end-to-end orchestration.
 
 The command names use a spelling-aware Norse/navigation theme so they are short, distinct, and less likely to collide with common dev tooling.
 
@@ -15,6 +15,19 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 | `/vidar` | Persist | You want repeated `/tyr` implementation loops plus review repair loops until the work is complete. |
 | `/skuld` | Review | You want PR-style review, targeted repair, re-verification, and repeated review until clean. |
 | `/polaris` | Orchestrate | You want the whole flow: plan, create agents if needed, research, implement, review, and repair. |
+| `/bifrost` | Remote | You want to start, inspect, or stop a secure OpenCode Web remote portal with a tunnel. |
+
+`/bifrost` is intentionally separate from `/polaris` and the implementation/review loops. It manages remote access only; the other commands do not depend on it.
+
+## Bifrost Remote Portal
+
+`/bifrost` guides an agent through starting or managing OpenCode Web plus a public tunnel.
+
+- `/bifrost` or `/bifrost start` starts or reuses a local OpenCode Web server, then exposes it through Cloudflare Quick Tunnel by default.
+- `/bifrost status` reports known local server, tunnel, URL, password, PID, state, and log information.
+- `/bifrost stop` stops only the selected Bifrost-managed tunnel and OpenCode Web process.
+
+The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, password, attach command, logs, and stop command in the terminal output.
 
 ## GitHub PR Review Mode
 
@@ -78,6 +91,7 @@ Restart OpenCode, then run:
 /vidar Finish the billing integration until review is clean
 /skuld current diff
 /polaris Ship the onboarding workflow end to end
+/bifrost start
 ```
 
 ## Install From GitHub
@@ -200,6 +214,12 @@ All options are optional. This block shows the defaults and the new command keys
           "maxOrchestrationLoops": 20,
           "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
         },
+        "bifrost": {
+          "preferredTunnel": "cloudflared",
+          "fallbackTunnel": "ngrok",
+          "stateDir": ".opencode/bifrost",
+          "defaultHost": "127.0.0.1"
+        },
         "modelFallback": {
           "enabled": true,
           "model": "",
@@ -226,7 +246,8 @@ Use subpath exports when you only want one command.
     ["opencode-agentic-commands/eitri", { "completionModel": "openai/gpt-5.3-codex-spark" }],
     ["opencode-agentic-commands/vidar", { "maxGoalLoops": 20 }],
     ["opencode-agentic-commands/skuld", { "maxReviewLoops": 10 }],
-    ["opencode-agentic-commands/polaris", { "maxOrchestrationLoops": 20 }]
+    ["opencode-agentic-commands/polaris", { "maxOrchestrationLoops": 20 }],
+    ["opencode-agentic-commands/bifrost", { "stateDir": ".opencode/bifrost" }]
   ]
 }
 ```
@@ -277,6 +298,7 @@ Pi package startup never auto-starts long-lived memory resources. Start those th
 | Vidar | Norse figure associated with resolve | Keeps working until the task is actually complete. |
 | Skuld | Norse Norn tied to what is owed or must become | Reviews consequences, risks, and remaining obligations. |
 | Polaris | North Star | Guides the whole journey end to end. |
+| Bifrost | Norse bridge between worlds | Opens a controlled remote path to OpenCode Web. |
 
 ## Test
 

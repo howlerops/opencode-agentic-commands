@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import AgenticCommandsPlugin, { EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin, applyModelFallbackConfig } from "../src/index.mjs"
+import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin, applyModelFallbackConfig } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -20,7 +20,7 @@ async function expands(plugin, slash, expected, options) {
   const { commands } = await commandsFrom(AgenticCommandsPlugin, {
     tyr: { baroModel: "openai/gpt-5.3-codex-spark" },
   })
-  assert.deepEqual(Object.keys(commands).sort(), ["eitri", "hugin", "munin", "polaris", "skuld", "tyr", "vidar"])
+  assert.deepEqual(Object.keys(commands).sort(), ["bifrost", "eitri", "hugin", "munin", "polaris", "skuld", "tyr", "vidar"])
 }
 
 {
@@ -143,6 +143,15 @@ async function expands(plugin, slash, expected, options) {
   assert.match(text, /\/vidar/)
   assert.match(text, /\/skuld/)
   assert.match(text, /Do not call the task complete until planning, implementation, measurable outcome checks, and final review all find no remaining required work/)
+}
+
+{
+  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Open a Bifrost remote portal/)
+  assert.match(text, /start port 4141/)
+  assert.match(text, /cloudflared tunnel --url http:\/\/127\.0\.0\.1:<port>/)
+  assert.match(text, /ngrok http http:\/\/127\.0\.0\.1:<port>/)
+  assert.match(text, /OPENCODE_SERVER_PASSWORD/)
+  assert.match(text, /opencode attach http:\/\/127\.0\.0\.1:<port>/)
 }
 
 console.log("plugin tests passed")

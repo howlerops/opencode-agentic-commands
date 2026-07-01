@@ -11,6 +11,7 @@ agenticCommands({
 })
 
 assert.deepEqual([...registered.keys()].sort(), [
+  "bifrost",
   "eitri",
   "hugin",
   "munin",
@@ -45,6 +46,8 @@ assert.match(COMMANDS.munin.render("skills"), /Do not install or start long-live
 assert.match(COMMANDS.polaris.render("ship it"), /\/hugin, \/tyr, \/eitri, \/munin, \/vidar, and \/skuld/)
 assert.match(COMMANDS.polaris.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
 assert.match(COMMANDS.skuld.render("current diff"), /Review target:\ncurrent diff/)
+assert.match(COMMANDS.bifrost.render("status"), /cloudflared tunnel --url http:\/\/127\.0\.0\.1:<port>/)
+assert.match(COMMANDS.bifrost.render("status"), /\/bifrost stop/)
 
 for (const name of registered.keys()) {
   const prompt = await readFile(new URL(`../pi/prompts/${name}.md`, import.meta.url), "utf8")

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Agentic slash commands for OpenCode and Pi: plan, execute, research, create, persist, review, and orchestrate.">
+    <meta name="description" content="Agentic slash commands for OpenCode and Pi: plan, execute, research, create, persist, review, remote access, and orchestrate.">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <title>opencode-agentic-commands</title>
     <style>
@@ -218,7 +218,7 @@
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
       }
 
@@ -349,7 +349,7 @@
           <div>
             <div class="eyebrow">Norse names. North-star orchestration.</div>
             <h1>Agentic command loops for OpenCode and Pi.</h1>
-            <p class="lead">A compact slash-command suite that plans, executes, researches, crafts agents, persists through implementation, reviews diffs, and orchestrates the whole delivery path.</p>
+            <p class="lead">A compact slash-command suite that plans, executes, researches, crafts agents, persists through implementation, reviews diffs, opens secure remote portals, and orchestrates the whole delivery path.</p>
             <div class="actions">
               <a class="button primary" href="#install">Install</a>
               <a class="button" href="#commands">Explore Commands</a>
@@ -363,15 +363,15 @@
 <span class="comment"># execute one goal</span>
 <span class="prompt">/tyr</span> Add role-based JWT auth
 
-<span class="comment"># run the whole route</span>
-<span class="prompt">/polaris</span> Ship onboarding end to end</pre>
+<span class="comment"># open a remote portal</span>
+<span class="prompt">/bifrost</span> start</pre>
           </div>
         </section>
 
         <section id="commands">
           <div class="section-head">
-            <h2>Seven Commands</h2>
-            <p>Short, spellable names with distinct jobs. Use one command directly, or let Polaris coordinate the full suite.</p>
+            <h2>Eight Commands</h2>
+            <p>Short, spellable names with distinct jobs. Use one command directly, or let Polaris coordinate the delivery suite.</p>
           </div>
           <div class="grid">
             <article class="card"><div class="command">/hugin</div><div class="role">Plan</div><p>Deep context research, story DAGs, risk register, verification matrix, and review gates.</p></article>
@@ -381,6 +381,7 @@
             <article class="card"><div class="command">/vidar</div><div class="role">Persist</div><p>Repeat implementation and review repair loops until the task is complete or truly blocked.</p></article>
             <article class="card"><div class="command">/skuld</div><div class="role">Review</div><p>PR-style findings, targeted fixes, re-verification, and repeated review until clean.</p></article>
             <article class="card"><div class="command">/polaris</div><div class="role">Orchestrate</div><p>The north-star command: plan, create, research, implement, review, and repair.</p></article>
+            <article class="card"><div class="command">/bifrost</div><div class="role">Remote</div><p>Start, inspect, or stop OpenCode Web plus a secure Cloudflare or ngrok tunnel.</p></article>
           </div>
         </section>
 

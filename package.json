@@ -1,7 +1,7 @@
 {
   "name": "opencode-agentic-commands",
   "version": "0.1.0",
-  "description": "OpenCode plugins and Pi extensions for agentic goal, planning, review, autoresearch, and AutoAgent workflows.",
+  "description": "OpenCode plugins and Pi extensions for agentic planning, execution, review, research, orchestration, and remote portal workflows.",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.mjs",
@@ -13,7 +13,8 @@
     "./vidar": "./src/vidar.mjs",
     "./hugin": "./src/hugin.mjs",
     "./skuld": "./src/skuld.mjs",
-    "./polaris": "./src/polaris.mjs"
+    "./polaris": "./src/polaris.mjs",
+    "./bifrost": "./src/bifrost.mjs"
   },
   "files": [
     "src",
@@ -45,6 +46,7 @@
     "hugin",
     "skuld",
     "polaris",
+    "bifrost",
     "agentic"
   ],
   "peerDependencies": {

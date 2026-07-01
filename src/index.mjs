@@ -5,6 +5,7 @@ import { VidarPlugin } from "./vidar.mjs"
 import { HuginPlugin } from "./hugin.mjs"
 import { SkuldPlugin } from "./skuld.mjs"
 import { PolarisPlugin } from "./polaris.mjs"
+import { BifrostPlugin } from "./bifrost.mjs"
 
 const DEFAULT_OPTIONS = {
   tyr: {},
@@ -14,6 +15,7 @@ const DEFAULT_OPTIONS = {
   hugin: {},
   skuld: {},
   polaris: {},
+  bifrost: {},
   memory: {},
   modelFallback: {},
 }
@@ -140,6 +142,7 @@ export async function AgenticCommandsPlugin(input, options = {}) {
     await HuginPlugin(input, config.hugin),
     await SkuldPlugin(input, config.skuld),
     await PolarisPlugin(input, config.polaris),
+    await BifrostPlugin(input, config.bifrost),
   ]
 
   return {
@@ -160,5 +163,6 @@ export { VidarPlugin } from "./vidar.mjs"
 export { HuginPlugin } from "./hugin.mjs"
 export { SkuldPlugin } from "./skuld.mjs"
 export { PolarisPlugin } from "./polaris.mjs"
+export { BifrostPlugin } from "./bifrost.mjs"
 
 export default AgenticCommandsPlugin
