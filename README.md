@@ -9,7 +9,7 @@ OpenCode plugin package and Pi package that adds agentic slash commands/prompts:
 - `/ultraplan` - verified dependency-aware planning with story DAGs, parallel lanes, risks, and review gates before implementation.
 - `/ultrareview` - repeated PR-style review and repair loops until no actionable findings remain.
 
-For Pi, the package currently exposes `/goal`, `/ultraplan`, and `/ultrareview` as prompt templates.
+For Pi, the package exposes all six commands as Pi extensions and prompt templates.
 
 ## Install
 
@@ -52,7 +52,18 @@ Restart opencode after changing plugin config.
 
 ## Install For Pi
 
-Pi loads this repo as a Pi package through the `pi.prompts` manifest in `package.json`.
+Pi loads this repo as a Pi package through the `pi.extensions` and `pi.prompts` manifests in `package.json`.
+
+The Pi extension registers these slash commands directly:
+
+- `/goal`
+- `/autoresearch`
+- `/autoagent`
+- `/ultrawork`
+- `/ultraplan`
+- `/ultrareview`
+
+The prompt templates in `pi/prompts/` provide static fallbacks for the same command names and make the workflows browsable/configurable as plain Markdown.
 
 ### Local path
 
@@ -64,6 +75,8 @@ Then restart Pi or run `/reload`, and use:
 
 ```text
 /goal Add JWT authentication with role-based access control
+/ultrawork Finish the checkout flow until review is clean
+/ultrareview current diff
 ```
 
 ### GitHub
@@ -82,7 +95,18 @@ After publishing to npm:
 pi install npm:opencode-agentic-commands
 ```
 
-Pi prompt templates are static Markdown. To change the Pi `/goal` defaults, edit `pi/prompts/goal.md` or create a project-local `.pi/prompts/goal.md` that overrides it.
+Pi extension commands are loaded from `pi/extensions/agentic-commands.js`. Prompt templates are static Markdown. To change prompt defaults, edit files in `pi/prompts/` or create project-local `.pi/prompts/<command>.md` files that override them.
+
+### Pi Package Manifest
+
+```json
+{
+  "pi": {
+    "extensions": ["./pi/extensions"],
+    "prompts": ["./pi/prompts"]
+  }
+}
+```
 
 ## Default Config
 
@@ -175,6 +199,7 @@ You can install only one command by using subpath exports:
 - `/ultrareview` can be used standalone against a worktree diff, branch, PR, commit range, or described target. It loops review, targeted repair, and verification until clean.
 - `/autoresearch` defaults mirror karpathy/autoresearch's `program.md`, `train.py`, `prepare.py`, `uv run train.py`, and `val_bpb` convention.
 - `/autoagent` defaults to opencode-native artifacts and only references upstream AutoAgent CLI/container settings when explicitly requested.
+- In Pi, `pi/extensions/agentic-commands.js` registers all six commands and `pi/prompts/` ships matching prompt templates.
 
 ## Test
 

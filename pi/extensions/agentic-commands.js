@@ -1,0 +1,184 @@
+const COMMANDS = {
+  goal: {
+    description: "Run a repo goal end-to-end with a baro-style plan, story DAG, critic loop, and final verification.",
+    render: (args) => `Run this goal end-to-end using a baro-inspired workflow in Pi.
+
+Goal:
+${args}
+
+Use this process:
+
+1. Preconditions
+- Confirm the current directory is a git repository before making changes.
+- Inspect the repo first: read key docs, package/config files, tests, and existing architecture.
+- If the goal is ambiguous enough to risk wrong implementation, ask one concise clarifying question; otherwise proceed.
+
+2. Architecture pass
+- Produce a short decision document before edits.
+- Pin the files, APIs, schemas, commands, migration strategy, and test strategy that downstream work must follow.
+- Avoid broad rewrites unless the goal requires them.
+
+3. Story DAG
+- Split the goal into small dependent stories.
+- Mark independent stories and execute them in the safest available order.
+- Pi does not ship built-in sub-agents or plan mode; if parallelism is needed, propose tmux/Pi subprocesses or an extension-backed workflow before attempting it.
+- Track progress in a visible repo-local artifact such as TODO.md when the task is substantial.
+
+4. Build loop
+- Implement each story in isolated, reviewable increments.
+- After each story, run the narrowest useful verification.
+- If a story gets stuck, replan that story rather than continuing blindly.
+
+5. Critic loop
+- Review the changed code for correctness, regressions, security issues, race conditions, edge cases, and missing tests.
+- Repair any concrete findings.
+
+6. Baro delegation defaults
+- If baro is installed and the user asks to delegate the goal to baro, default to: baro --llm opencode -m openai/gpt-5.3-codex-spark "${args}".
+- If the user wants Pi itself to run the work, stay in this Pi session and follow this workflow directly.
+
+7. Finalizer
+- Run the broadest feasible verification for this repo.
+- Summarize completed stories, files changed, verification commands, remaining risks, and PR-readiness.`,
+  },
+  autoresearch: {
+    description: "Run an autonomous research loop: baseline, hypothesize, edit, evaluate, keep/discard, and report.",
+    render: (args) => `Run a Pi-native autoresearch loop inspired by karpathy/autoresearch.
+
+Research objective:
+${args}
+
+Use this process:
+
+1. Scope and setup
+- Inspect the repo and identify the research target, experiment entrypoint, metric, baseline command, and files that are safe to modify.
+- Prefer mutable files: train.py.
+- Treat protected files as read-only unless the objective explicitly requires otherwise: prepare.py.
+- If program.md exists, treat it as the research org instructions. If not, infer a concise local research protocol from project docs.
+- Use setup command when needed and feasible: uv sync && uv run prepare.py.
+
+2. Baseline
+- Run or identify the baseline experiment command: uv run train.py.
+- Capture metric name, direction, runtime budget, logs path, and current best score.
+- Default metric: val_bpb; direction: lower; time budget: 5 minutes per experiment.
+- If execution is too expensive or unavailable, document the blocker and continue with a dry-run experiment plan.
+
+3. Experiment ledger
+- Maintain an experiment ledger in the conversation with hypothesis, files changed, command, metric, result, decision, and next idea.
+- Keep diffs small and reversible.
+
+4. Iteration loop
+- Propose one hypothesis at a time.
+- Edit only allowed experiment files.
+- Run the fixed-budget command or the nearest feasible verification.
+- Compare against the current best using the declared metric.
+- Keep improvements; revert or supersede failed changes with a clear reason. Never fabricate results.
+
+5. Final report
+- Report best result, full experiment ledger, final diff summary, exact commands run, artifacts/logs, and recommended next experiments.`,
+  },
+  autoagent: {
+    description: "Create or run AutoAgent-style Pi agents/workflows from natural language.",
+    render: (args) => `Build or run a Pi-native AutoAgent-style workflow.
+
+Request:
+${args}
+
+Use this process:
+
+1. Interpret the request
+- Determine whether the user wants deep research, a single custom agent, a multi-agent workflow, tools, or an end-to-end task solved by generated agents.
+- Ask one concise clarification only if the requested agent/workflow cannot be safely specified.
+- Default mode: Pi-native.
+
+2. Agent/workflow profiling
+- Derive agent profiles from natural language: role, objective, inputs, outputs, tools needed, permissions, stopping criteria, and verification.
+- For workflows, define handoffs, dependencies, shared artifacts, and failure recovery.
+- Tool creation and workflow creation are allowed when they stay Pi-native and scoped.
+
+3. Pi implementation
+- Prefer Pi-native artifacts over external frameworks: extensions in .pi/extensions/ or ~/.pi/agent/extensions/, skills, prompt templates, and package resources.
+- Keep generated agents/workflows narrow, composable, and permission-scoped.
+- Do not create broad always-on tools unless explicitly requested.
+
+4. External AutoAgent compatibility
+- If the user explicitly asks to run upstream AutoAgent instead of Pi-native generation, use OpenAI/Codex-compatible defaults where available and document required setup.
+- Do not require upstream AutoAgent, Docker, or API-key setup for Pi-native workflows.
+
+5. Self-improvement loop
+- Test the generated agent/workflow on a small representative task.
+- Review output quality, missing tools, unsafe permissions, and unclear handoffs.
+- Revise when concrete issues are found.
+
+6. Final report
+- Summarize created/modified Pi artifacts, agent roles, workflow graph, permissions, validation performed, and any manual setup still required.`,
+  },
+  ultrawork: {
+    description: "Run repeated goal implementation and PR-review repair loops until only an unresolvable blocker remains or review is clean.",
+    render: (args) => `Run this task in ultrawork mode in Pi: repeatedly execute goal-sized implementation loops until the work is fully realized, then run PR-review repair loops until there are no review findings left.
+
+Original goal:
+${args}
+
+Operating principle:
+- Do not stop after one pass.
+- Treat each pass as incomplete until a critic review explicitly confirms the full task is done.
+- Do not exit early because work is large, tests fail, review findings remain, context is uncomfortable, or another loop is needed.
+- Only stop before completion when you hit a concrete blocker you cannot resolve with available tools, repo context, user-provided information, and reasonable implementation choices.
+- When you hit a possible blocker, first try to resolve it: inspect more files, run narrower checks, simplify the approach, repair the failure, or ask one concise clarifying question if missing user input is the only blocker.
+
+Phase 1: implementation loop
+- Use /goal semantics for each implementation loop: inspect, architect, split into stories, implement, verify, critic-repair, and summarize.
+- If work remains, start another targeted loop instead of exiting.
+
+Phase 2: critic-driven loops
+- Run a critic pass after every implementation loop.
+- The critic must answer whether the original goal is fully satisfied, what work remains, what verification is missing, and what risks remain.
+- If the critic finds required work, split it smaller and continue.
+
+Phase 3: PR review and repair loops
+- Review the changed files as if preparing a pull request.
+- If PR review finds anything actionable, run a targeted repair loop, re-run verification, and review again.
+- Repeat until review finds no actionable issues.
+
+Hard stop rule:
+- If there is any concrete remaining implementation work, missing required verification, or actionable PR review finding, do not call the task complete and do not exit. Start another targeted loop.
+- The only acceptable early exit is an unresolved blocker that you cannot fix after reasonable investigation and repair attempts.
+- When blocked, report the exact blocker, attempts made, evidence that it cannot be resolved in this session, and the smallest user action needed to unblock it.`,
+  },
+  ultraplan: {
+    description: "Create a verified dependency-aware execution plan without editing code.",
+    render: (args) => `Create an ultraplan for this goal before implementation. Do not edit code unless explicitly asked to execute the plan.
+
+Goal:
+${args}
+
+Produce a dependency-aware story DAG with success criteria, current-state findings, architecture decisions, parallel-safe lanes, serialized integration points, risks, verification matrix, and review gates. Run a separate review pass over the plan when possible, revise concrete flaws, then present the approved plan and recommended first execution command.`,
+  },
+  ultrareview: {
+    description: "Review and repair a diff repeatedly until no actionable PR-review findings remain.",
+    render: (args) => `Run an ultrareview for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
+
+Review target:
+${args}
+
+Focus on correctness bugs, regressions, missing tests, security, data loss, race conditions, compatibility breaks, performance hazards, and concrete maintainability risks. Present findings with severity, file/line where possible, failure mode, minimal fix, and verification needed. If actionable findings exist, repair them with a targeted implementation loop, re-run verification, and review again until clean.`,
+  },
+}
+
+function normalizeArgs(args) {
+  return String(args || "").trim()
+}
+
+export default function agenticCommands(pi) {
+  for (const [name, command] of Object.entries(COMMANDS)) {
+    pi.registerCommand(name, {
+      description: command.description,
+      handler: async (args, ctx) => {
+        await ctx.sendUserMessage(command.render(normalizeArgs(args)))
+      },
+    })
+  }
+}
+
+export { COMMANDS }

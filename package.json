@@ -1,7 +1,7 @@
 {
   "name": "opencode-agentic-commands",
   "version": "0.1.0",
-  "description": "OpenCode slash-command plugins for baro-style goals, planning, review loops, autoresearch, and AutoAgent-style workflow generation.",
+  "description": "OpenCode plugins and Pi extensions for agentic goal, planning, review, autoresearch, and AutoAgent workflows.",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.mjs",
@@ -21,16 +21,20 @@
     "LICENSE"
   ],
   "pi": {
+    "extensions": [
+      "./pi/extensions"
+    ],
     "prompts": [
       "./pi/prompts"
     ]
   },
   "scripts": {
-    "test": "node test/plugin.test.mjs"
+    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs"
   },
   "keywords": [
     "opencode",
     "pi-package",
+    "pi-extension",
     "plugin",
     "baro",
     "autoresearch",

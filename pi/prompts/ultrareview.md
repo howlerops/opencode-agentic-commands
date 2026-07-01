@@ -1,3 +1,7 @@
+---
+description: Review and repair a diff repeatedly until no actionable PR-review findings remain
+argument-hint: "<review target>"
+---
 Run an ultrareview for this work: review the diff or described change like a pull request, repair actionable findings, and repeat until review is clean.
 
 Review target:

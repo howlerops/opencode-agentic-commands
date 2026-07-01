@@ -1,3 +1,7 @@
+---
+description: Create a verified dependency-aware execution plan without editing code
+argument-hint: "<goal>"
+---
 Create an ultraplan for this goal before implementation. Do not edit code unless explicitly asked to execute the plan.
 
 Goal:
