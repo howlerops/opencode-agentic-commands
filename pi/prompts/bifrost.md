@@ -13,4 +13,4 @@ Execute the package runner when available:
 
 If `opencode-bifrost` is not on PATH in this local checkout, locate the installed `opencode-agentic-commands` package first, then run its `scripts/bifrost-runner.mjs` with the same arguments.
 
-Return only the runner output.
+Return only the runner output. The OpenCode Web username is `opencode` unless `OPENCODE_SERVER_USERNAME` was set by the runner environment. For `start` and `status`, keep the URL, username, password, and `Copy login` line easy to see.

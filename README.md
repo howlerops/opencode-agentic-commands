@@ -24,10 +24,10 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 `/bifrost` starts or manages OpenCode Web plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
 
 - `/bifrost` or `/bifrost start` starts or reuses a local OpenCode Web server, then exposes it through Cloudflare Quick Tunnel by default.
-- `/bifrost status` reports known local server, tunnel, URL, password, PID, state, and log information.
+- `/bifrost status` reports known local server, tunnel, URL, username, password, PID, state, and log information.
 - `/bifrost stop` stops only the selected Bifrost-managed tunnel and OpenCode Web process.
 
-The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, password, attach command, logs, and stop command in the terminal output.
+The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, attach command, logs, and stop command in the terminal output. The default OpenCode Web username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
 
 ## GitHub PR Review Mode
 

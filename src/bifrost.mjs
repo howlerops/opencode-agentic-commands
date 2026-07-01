@@ -24,7 +24,8 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  return `Run this shell command and return only its output: node ${shellQuote(BIFROST_RUNNER)} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} -- $ARGUMENTS`
+  return `Return this Bifrost output exactly and do not add commentary:
+!\`node ${shellQuote(BIFROST_RUNNER)} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} -- $ARGUMENTS\``
 }
 
 function sleep(ms) {
@@ -41,6 +42,12 @@ function workspaceDirectory(pluginInput = {}) {
 
 function resolveStateDir(pluginInput, config) {
   return path.resolve(workspaceDirectory(pluginInput), config.stateDir)
+}
+
+function candidateStateDirs(pluginInput, config) {
+  const dirs = [resolveStateDir(pluginInput, config)]
+  if (!path.isAbsolute(config.stateDir) && process.env.HOME) dirs.push(path.resolve(process.env.HOME, config.stateDir))
+  return [...new Set(dirs)]
 }
 
 function parseRequest(args = "") {
@@ -79,6 +86,14 @@ async function readState(stateDir) {
   } catch {
     return null
   }
+}
+
+async function findState(pluginInput, config) {
+  for (const stateDir of candidateStateDirs(pluginInput, config)) {
+    const state = await readState(stateDir)
+    if (state) return { stateDir, state }
+  }
+  return { stateDir: resolveStateDir(pluginInput, config), state: null }
 }
 
 async function writeState(stateDir, state) {
@@ -142,10 +157,18 @@ function statusText(stateDir, state) {
   if (!state) return `Bifrost status: no managed portal state found.\nState directory: ${stateDir}`
   const webAlive = pidAlive(state.webPid)
   const tunnelAlive = pidAlive(state.tunnelPid)
+  const username = state.username || "opencode"
   return `Bifrost status: ${webAlive && tunnelAlive ? "running" : "partial or stale"}
+
+Open: ${state.publicUrl || state.localUrl || "unknown"}
+Username: ${username}
+Password: ${state.password || "unknown"}
+
+Copy login: url=${state.publicUrl || state.localUrl || "unknown"} username=${username} password=${state.password || "unknown"}
 
 Local URL: ${state.localUrl || "unknown"}
 Public URL: ${state.publicUrl || "unknown"}
+Username: ${username}
 Password: ${state.password || "unknown"}
 Password source: ${state.passwordSource || "unknown"}
 Attach: ${state.localUrl ? `opencode attach ${state.localUrl}` : "unknown"}
@@ -193,18 +216,19 @@ async function startBifrost(pluginInput, config, request) {
 
   const port = await choosePort(request.port)
   const password = process.env.OPENCODE_SERVER_PASSWORD || `bifrost-${randomBytes(18).toString("base64url")}`
+  const username = process.env.OPENCODE_SERVER_USERNAME || "opencode"
   const passwordSource = process.env.OPENCODE_SERVER_PASSWORD ? "OPENCODE_SERVER_PASSWORD" : "generated temporary password"
   const localUrl = `http://${config.defaultHost}:${port}`
   const webLog = path.join(stateDir, "opencode-web.log")
   const tunnelLog = path.join(stateDir, `${tunnelProvider}.log`)
-  const webPid = startProcess(opencode, ["web", "--hostname", config.defaultHost, "--port", String(port)], { OPENCODE_SERVER_PASSWORD: password }, webLog)
+  const webPid = startProcess(opencode, ["web", "--hostname", config.defaultHost, "--port", String(port)], { OPENCODE_SERVER_PASSWORD: password, OPENCODE_SERVER_USERNAME: username }, webLog)
   const localStatus = await waitForLocalServer(localUrl, config.startupTimeoutMs)
   if (!localStatus) return `Bifrost start failed: OpenCode Web did not respond at ${localUrl}.\nWeb log: ${webLog}`
 
   const tunnelArgs = tunnelProvider === "ngrok" ? ["http", localUrl] : ["tunnel", "--url", localUrl]
   const tunnelPid = startProcess(tunnelCommand, tunnelArgs, {}, tunnelLog)
   const publicUrl = await waitForTunnelUrl(tunnelLog, config.startupTimeoutMs)
-  const state = { localUrl, publicUrl, password, passwordSource, port, webPid, tunnelPid, tunnelProvider, stateDir, webLog, tunnelLog, startedAt: new Date().toISOString() }
+  const state = { localUrl, publicUrl, username, password, passwordSource, port, webPid, tunnelPid, tunnelProvider, stateDir, webLog, tunnelLog, startedAt: new Date().toISOString() }
   await writeState(stateDir, state)
 
   if (!publicUrl) {
@@ -219,8 +243,10 @@ Check tunnel log: ${tunnelLog}`
 
 Local URL: ${localUrl}
 Public URL: ${publicUrl}
+Username: ${username}
 Password: ${password}
 Password source: ${passwordSource}
+Copy login: url=${publicUrl} username=${username} password=${password}
 Attach: opencode attach ${localUrl}
 Status: /bifrost status
 Stop: /bifrost stop
@@ -234,8 +260,8 @@ Tunnel log: ${tunnelLog}`
 
 async function runBifrost(pluginInput, config, args) {
   const request = parseRequest(args)
-  const stateDir = resolveStateDir(pluginInput, config)
-  if (request.mode === "status") return statusText(stateDir, await readState(stateDir))
+  const { stateDir, state } = await findState(pluginInput, config)
+  if (request.mode === "status") return statusText(stateDir, state)
   if (request.mode === "stop") return stopBifrost(stateDir)
   return startBifrost(pluginInput, config, request)
 }

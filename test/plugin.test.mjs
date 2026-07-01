@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
@@ -159,7 +159,8 @@ async function expands(plugin, slash, expected, options) {
 
 {
   const { commands } = await commandsFrom(BifrostPlugin)
-  assert.match(commands.bifrost.template, /^Run this shell command and return only its output: node /)
+  assert.match(commands.bifrost.template, /^Return this Bifrost output exactly and do not add commentary:/)
+  assert.match(commands.bifrost.template, /!`node /)
   assert.doesNotMatch(commands.bifrost.template, /Request:/)
   assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
 }
@@ -173,6 +174,39 @@ async function expands(plugin, slash, expected, options) {
     assert.match(output.parts[0].text, /Bifrost status: no managed portal state found/)
     assert.doesNotMatch(output.parts[0].text, /Start workflow:/)
   } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-fallback-test-"))
+  const home = path.join(temp, "home")
+  const project = path.join(temp, "project")
+  const stateDir = path.join(home, ".bifrost")
+  const originalHome = process.env.HOME
+  try {
+    await mkdir(project, { recursive: true })
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl: "http://127.0.0.1:4567",
+      publicUrl: "https://example.trycloudflare.com",
+      username: "opencode",
+      password: "bifrost-test-password",
+      passwordSource: "generated temporary password",
+      webPid: 999999,
+      tunnelPid: 999998,
+      tunnelProvider: "cloudflared",
+    })}\n`)
+    process.env.HOME = home
+    const hooks = await BifrostPlugin({ directory: project }, { stateDir: ".bifrost" })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "status" }, output)
+    assert.match(output.parts[0].text, /Open: https:\/\/example\.trycloudflare\.com/)
+    assert.match(output.parts[0].text, /Username: opencode/)
+    assert.match(output.parts[0].text, /Password: bifrost-test-password/)
+    assert.match(output.parts[0].text, /Copy login: url=https:\/\/example\.trycloudflare\.com username=opencode password=bifrost-test-password/)
+  } finally {
+    process.env.HOME = originalHome
     await rm(temp, { recursive: true, force: true })
   }
 }
