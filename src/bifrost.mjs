@@ -1,3 +1,9 @@
+import { spawn, execFile } from "node:child_process"
+import { randomBytes } from "node:crypto"
+import { closeSync, openSync } from "node:fs"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { createServer } from "node:net"
+import path from "node:path"
 import { addTextOutput, firstTextPart, parseSlash, replaceArguments } from "./shared.mjs"
 
 const DEFAULT_OPTIONS = {
@@ -7,6 +13,7 @@ const DEFAULT_OPTIONS = {
   fallbackTunnel: "ngrok",
   stateDir: ".opencode/bifrost",
   defaultHost: "127.0.0.1",
+  startupTimeoutMs: 30000,
 }
 
 function normalizeOptions(options = {}) {
@@ -14,60 +21,247 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  return `Open a Bifrost remote portal for this OpenCode workspace, or manage an existing portal.
+  return `Execute Bifrost for this OpenCode workspace now.
 
 Request:
 $ARGUMENTS
 
-Scope:
-- Treat /bifrost as an independent remote-access add-on. Do not invoke /polaris, /hugin, /tyr, /munin, /eitri, /vidar, or /skuld unless the user separately asks.
-- Manage only OpenCode Web and tunnel processes started for the current workspace unless the user explicitly selects another detected session.
-- Prefer safe, reversible shell operations. Do not expose a server without a password.
+Mode:
+- Default to start when the request is empty.
+- Use status for "status".
+- Use stop for "stop".
 
-Supported modes:
-- start: default when no mode is provided.
-- status: report detected OpenCode Web processes, tunnel processes, ports, URLs, passwords if known, and log/state files.
-- stop: stop only the selected Bifrost-managed tunnel and OpenCode Web process after identifying them clearly.
+Run the workflow with shell tools instead of printing this prompt back to the user:
+- State directory: ${options.stateDir}
+- Host: ${options.defaultHost}
+- Preferred tunnel: ${options.preferredTunnel}
+- Fallback tunnel: ${options.fallbackTunnel}
+- For start: reuse active Bifrost state when valid; otherwise choose an available port, ensure a non-empty OPENCODE_SERVER_PASSWORD or generated temporary password, start \`opencode web --hostname ${options.defaultHost} --port <port>\`, then start \`${options.preferredTunnel} tunnel --url http://127.0.0.1:<port>\` or \`${options.fallbackTunnel} http http://127.0.0.1:<port>\`.
+- For status: report state file, local URL, public URL, password source/value if known, PIDs, logs, and stale-state concerns.
+- For stop: stop only Bifrost-managed PIDs from state and remove stale state.
 
-State and logs:
-- Use state directory: ${options.stateDir}.
-- Record PID files, selected port, tunnel provider, public URL, generated password, command lines, and log paths there when starting new managed processes.
-- If existing state is stale, report it and replace it only after confirming the referenced processes are gone.
+Security:
+- Never expose a server without a password.
+- Never bind to 0.0.0.0 for a public tunnel unless explicitly requested.
+- Do not commit state, logs, tunnel URLs, or passwords.
 
-Start workflow:
-1. Parse the request for mode, preferred port, preferred tunnel provider, and whether to reuse an existing server.
-2. Inspect for existing OpenCode Web servers before starting a new one. Check Bifrost state, listening localhost ports, and process command lines where available.
-3. If exactly one compatible OpenCode Web server is detected, reuse it unless the user asked for a new server.
-4. If multiple compatible servers are detected, present choices with port, cwd, PID, command, and state/log paths when detectable. Ask the user to choose instead of guessing.
-5. If no server is available, choose a non-blocking local port. Prefer the requested port if free; otherwise choose an available high port.
-6. Ensure there is a password. Reuse OPENCODE_SERVER_PASSWORD when set; otherwise generate a strong temporary password and pass it only to the started OpenCode Web process environment.
-7. Start OpenCode Web bound to ${options.defaultHost}. Prefer a background process with logs under ${options.stateDir}, for example: OPENCODE_SERVER_PASSWORD=<password> opencode web --hostname ${options.defaultHost} --port <port>.
-8. Wait until the local health check or root URL responds. If startup fails, show the last useful log lines and stop.
-9. Start the public tunnel. Prefer ${options.preferredTunnel} Quick Tunnel with: cloudflared tunnel --url http://127.0.0.1:<port>.
-10. If ${options.preferredTunnel} is missing, install it only with user-safe package tooling available on the machine, such as brew on macOS, and report the command. If install is not possible or fails, fall back to ${options.fallbackTunnel}.
-11. For ngrok fallback, use: ngrok http http://127.0.0.1:<port>. If ngrok needs auth/setup, report the blocker and leave the local OpenCode Web server running only if it was already running before /bifrost or the user wants local access.
-12. Extract the public URL from tunnel output or local tunnel API. Wait briefly and retry before declaring failure.
-
-Terminal output requirements:
-- Always print the active local URL, public tunnel URL, password source, and password value when the command successfully starts or reuses a portal and the password is known.
-- Print the exact attach command: opencode attach http://127.0.0.1:<port>.
-- Print status and stop commands: /bifrost status and /bifrost stop.
-- Print PID files and log files.
-- If more than one chat/session is available from OpenCode Web or the server API, list them and ask which one to open or attach to.
-
-Security rules:
-- Never bind OpenCode Web to 0.0.0.0 for a public tunnel unless the user explicitly asks and understands the risk.
-- Never use an empty password for a tunnel-exposed server.
-- Do not commit state files, passwords, tunnel URLs, or logs.
-- If you cannot verify the server is password-protected, stop before exposing it publicly.
-
-Final response:
-- For start/reuse: provide portal status, local URL, public URL, password, attach command, logs, and stop command.
-- For status: provide current state and any stale-state cleanup recommendation.
-- For stop: provide what was stopped, what was already absent, and any remaining manual cleanup.`
+Final response must be concise and operational: local URL, public URL, password, attach command, logs, PIDs, and /bifrost stop when running; status details for status; cleanup details for stop.`
 }
 
-export async function BifrostPlugin(_input, options) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function shellQuote(value) {
+  return `'${String(value).replaceAll("'", "'\\''")}'`
+}
+
+function workspaceDirectory(pluginInput = {}) {
+  return pluginInput.directory || pluginInput.project?.root || pluginInput.project?.directory || process.cwd()
+}
+
+function resolveStateDir(pluginInput, config) {
+  return path.resolve(workspaceDirectory(pluginInput), config.stateDir)
+}
+
+function parseRequest(args = "") {
+  const tokens = String(args).trim().split(/\s+/).filter(Boolean)
+  const first = tokens[0]?.toLowerCase()
+  const mode = ["start", "status", "stop"].includes(first) ? first : "start"
+  const portMatch = String(args).match(/(?:--port\s+|port\s+|:)(\d{2,5})\b/)
+  return {
+    mode,
+    port: portMatch ? Number(portMatch[1]) : 0,
+    newServer: /\bnew\b|--new/.test(String(args)),
+  }
+}
+
+async function commandPath(command) {
+  return new Promise((resolve) => {
+    execFile("sh", ["-lc", `command -v ${shellQuote(command)}`], (error, stdout) => {
+      resolve(error ? "" : stdout.trim().split("\n")[0])
+    })
+  })
+}
+
+function pidAlive(pid) {
+  if (!pid) return false
+  try {
+    process.kill(Number(pid), 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readState(stateDir) {
+  try {
+    return JSON.parse(await readFile(path.join(stateDir, "state.json"), "utf8"))
+  } catch {
+    return null
+  }
+}
+
+async function writeState(stateDir, state) {
+  await mkdir(stateDir, { recursive: true })
+  await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify(state, null, 2)}\n`)
+}
+
+async function choosePort(requested) {
+  return new Promise((resolve, reject) => {
+    const server = createServer()
+    server.once("error", reject)
+    server.listen(requested || 0, "127.0.0.1", () => {
+      const address = server.address()
+      const port = typeof address === "object" && address ? address.port : requested
+      server.close(() => resolve(port))
+    })
+  })
+}
+
+function startProcess(command, args, env, logPath) {
+  const log = openSync(logPath, "a")
+  const child = spawn(command, args, {
+    detached: true,
+    env: { ...process.env, ...env },
+    stdio: ["ignore", log, log],
+  })
+  child.unref()
+  closeSync(log)
+  return child.pid
+}
+
+async function waitForLocalServer(url, timeoutMs) {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url)
+      if (response.status > 0) return response.status
+    } catch {
+      await sleep(500)
+    }
+  }
+  return 0
+}
+
+async function waitForTunnelUrl(logPath, timeoutMs) {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const log = await readFile(logPath, "utf8")
+      const matches = [...log.matchAll(/https:\/\/[-a-zA-Z0-9.]+\.(?:trycloudflare\.com|ngrok-free\.app|ngrok\.app|ngrok\.io)/g)]
+      if (matches.length) return matches.at(-1)[0]
+    } catch {
+      // Log file may not exist yet.
+    }
+    await sleep(500)
+  }
+  return ""
+}
+
+function statusText(stateDir, state) {
+  if (!state) return `Bifrost status: no managed portal state found.\nState directory: ${stateDir}`
+  const webAlive = pidAlive(state.webPid)
+  const tunnelAlive = pidAlive(state.tunnelPid)
+  return `Bifrost status: ${webAlive && tunnelAlive ? "running" : "partial or stale"}
+
+Local URL: ${state.localUrl || "unknown"}
+Public URL: ${state.publicUrl || "unknown"}
+Password: ${state.password || "unknown"}
+Password source: ${state.passwordSource || "unknown"}
+Attach: ${state.localUrl ? `opencode attach ${state.localUrl}` : "unknown"}
+Web PID: ${state.webPid || "unknown"} (${webAlive ? "running" : "not running"})
+Tunnel PID: ${state.tunnelPid || "unknown"} (${tunnelAlive ? "running" : "not running"})
+Tunnel provider: ${state.tunnelProvider || "unknown"}
+State: ${path.join(stateDir, "state.json")}
+Web log: ${state.webLog || "unknown"}
+Tunnel log: ${state.tunnelLog || "unknown"}
+
+Stop: /bifrost stop`
+}
+
+async function stopBifrost(stateDir) {
+  const state = await readState(stateDir)
+  if (!state) return `Bifrost stop: no managed portal state found.\nState directory: ${stateDir}`
+  const stopped = []
+  for (const [label, pid] of [["tunnel", state.tunnelPid], ["OpenCode Web", state.webPid]]) {
+    if (!pid) continue
+    if (!pidAlive(pid)) {
+      stopped.push(`${label} PID ${pid}: already stopped`)
+      continue
+    }
+    process.kill(Number(pid), "SIGTERM")
+    stopped.push(`${label} PID ${pid}: stopped`)
+  }
+  await rm(path.join(stateDir, "state.json"), { force: true })
+  return `Bifrost stop complete.\n${stopped.join("\n") || "No PIDs were recorded."}\nState removed: ${path.join(stateDir, "state.json")}`
+}
+
+async function startBifrost(pluginInput, config, request) {
+  const stateDir = resolveStateDir(pluginInput, config)
+  const existing = await readState(stateDir)
+  if (existing && !request.newServer && pidAlive(existing.webPid) && pidAlive(existing.tunnelPid)) return statusText(stateDir, existing)
+
+  await mkdir(stateDir, { recursive: true })
+  const opencode = await commandPath("opencode")
+  if (!opencode) return "Bifrost start failed: `opencode` was not found on PATH."
+
+  const preferred = await commandPath(config.preferredTunnel)
+  const fallback = preferred ? "" : await commandPath(config.fallbackTunnel)
+  const tunnelCommand = preferred || fallback
+  const tunnelProvider = preferred ? config.preferredTunnel : config.fallbackTunnel
+  if (!tunnelCommand) return `Bifrost start failed: neither ${config.preferredTunnel} nor ${config.fallbackTunnel} was found on PATH.`
+
+  const port = await choosePort(request.port)
+  const password = process.env.OPENCODE_SERVER_PASSWORD || `bifrost-${randomBytes(18).toString("base64url")}`
+  const passwordSource = process.env.OPENCODE_SERVER_PASSWORD ? "OPENCODE_SERVER_PASSWORD" : "generated temporary password"
+  const localUrl = `http://${config.defaultHost}:${port}`
+  const webLog = path.join(stateDir, "opencode-web.log")
+  const tunnelLog = path.join(stateDir, `${tunnelProvider}.log`)
+  const webPid = startProcess(opencode, ["web", "--hostname", config.defaultHost, "--port", String(port)], { OPENCODE_SERVER_PASSWORD: password }, webLog)
+  const localStatus = await waitForLocalServer(localUrl, config.startupTimeoutMs)
+  if (!localStatus) return `Bifrost start failed: OpenCode Web did not respond at ${localUrl}.\nWeb log: ${webLog}`
+
+  const tunnelArgs = tunnelProvider === "ngrok" ? ["http", localUrl] : ["tunnel", "--url", localUrl]
+  const tunnelPid = startProcess(tunnelCommand, tunnelArgs, {}, tunnelLog)
+  const publicUrl = await waitForTunnelUrl(tunnelLog, config.startupTimeoutMs)
+  const state = { localUrl, publicUrl, password, passwordSource, port, webPid, tunnelPid, tunnelProvider, stateDir, webLog, tunnelLog, startedAt: new Date().toISOString() }
+  await writeState(stateDir, state)
+
+  if (!publicUrl) {
+    return `Bifrost portal partially started: OpenCode Web is running, but no public tunnel URL was detected yet.
+
+${statusText(stateDir, state)}
+
+Check tunnel log: ${tunnelLog}`
+  }
+
+  return `Bifrost portal started.
+
+Local URL: ${localUrl}
+Public URL: ${publicUrl}
+Password: ${password}
+Password source: ${passwordSource}
+Attach: opencode attach ${localUrl}
+Status: /bifrost status
+Stop: /bifrost stop
+Web PID: ${webPid}
+Tunnel PID: ${tunnelPid}
+Tunnel provider: ${tunnelProvider}
+State: ${path.join(stateDir, "state.json")}
+Web log: ${webLog}
+Tunnel log: ${tunnelLog}`
+}
+
+async function runBifrost(pluginInput, config, args) {
+  const request = parseRequest(args)
+  const stateDir = resolveStateDir(pluginInput, config)
+  if (request.mode === "status") return statusText(stateDir, await readState(stateDir))
+  if (request.mode === "stop") return stopBifrost(stateDir)
+  return startBifrost(pluginInput, config, request)
+}
+
+export async function BifrostPlugin(pluginInput, options) {
   const config = normalizeOptions(options)
   const template = bifrostTemplate(config)
   const commandNames = [config.commandName]
@@ -90,7 +284,7 @@ export async function BifrostPlugin(_input, options) {
     },
     "command.execute.before": async (input, output) => {
       if (input.command !== config.commandName) return
-      addTextOutput(output, replaceArguments(template, input.arguments || ""))
+      addTextOutput(output, await runBifrost(pluginInput, config, input.arguments || ""))
     },
   }
 }

@@ -21,7 +21,7 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 
 ## Bifrost Remote Portal
 
-`/bifrost` guides an agent through starting or managing OpenCode Web plus a public tunnel.
+`/bifrost` starts or manages OpenCode Web plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
 
 - `/bifrost` or `/bifrost start` starts or reuses a local OpenCode Web server, then exposes it through Cloudflare Quick Tunnel by default.
 - `/bifrost status` reports known local server, tunnel, URL, password, PID, state, and log information.

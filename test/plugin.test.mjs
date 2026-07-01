@@ -1,4 +1,7 @@
 import assert from "node:assert/strict"
+import { mkdtemp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
 import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
 
 async function commandsFrom(plugin, options) {
@@ -148,12 +151,26 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
-  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Open a Bifrost remote portal/)
+  const text = await expands(BifrostPlugin, "/bifrost start port 4141", /Execute Bifrost/)
   assert.match(text, /start port 4141/)
   assert.match(text, /cloudflared tunnel --url http:\/\/127\.0\.0\.1:<port>/)
   assert.match(text, /ngrok http http:\/\/127\.0\.0\.1:<port>/)
   assert.match(text, /OPENCODE_SERVER_PASSWORD/)
-  assert.match(text, /opencode attach http:\/\/127\.0\.0\.1:<port>/)
+  assert.match(text, /Final response must be concise/)
+  assert.doesNotMatch(text, /Start workflow:/)
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-test-"))
+  try {
+    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "status" }, output)
+    assert.match(output.parts[0].text, /Bifrost status: no managed portal state found/)
+    assert.doesNotMatch(output.parts[0].text, /Start workflow:/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
 }
 
 console.log("plugin tests passed")
