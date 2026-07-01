@@ -102,17 +102,40 @@ Pi extension commands are loaded from `pi/extensions/agentic-commands.js`. Promp
 
 ### Optional AgentDB Memory
 
-This package declares `agentdb` as an optional dependency so Pi/npm/git installs can make the CLI available without making memory a hard requirement.
+Memory is explicit opt-in config, not install/setup behavior. By default this package does not install, start, or require AgentDB or Agent Wisdom.
 
-Use AgentDB as an optional recall/store layer:
+For OpenCode, enable memory by adding `memory` options to the plugin config:
 
-```bash
-npx agentdb@latest mcp start
+```json
+{
+  "plugin": [
+    [
+      "opencode-agentic-commands",
+      {
+        "memory": {
+          "agentdb": {
+            "enabled": true,
+            "dbPath": "/absolute/path/to/agentdb.rvf"
+          },
+          "agentWisdom": {
+            "enabled": true,
+            "name": "odi-agent-wisdom",
+            "command": ["node", "/absolute/path/to/agent-wisdom.mjs", "mcp"],
+            "root": "/absolute/path/to/repo-root",
+            "dbPath": "/absolute/path/to/wisdom.rvf"
+          }
+        }
+      }
+    ]
+  ]
+}
 ```
+
+When `memory.agentdb.enabled` is true, the plugin adds an OpenCode MCP entry using `npx -y agentdb@latest mcp start`. Existing `mcp.agentdb` entries are preserved unless `memory.agentdb.overwrite` is true.
 
 Commands that do context research (`/ultraplan`, `/ultrawork`, `/autoresearch`) should use AgentDB MCP/tools, Agent Wisdom, or the `agentdb` CLI when they are already available. If they are unavailable, the commands should skip them quietly and continue from repo sources. Optional memory must not become a blocker or create repeated "unavailable" narration.
 
-Pi extension docs explicitly warn against starting long-lived resources in extension factory startup, so this package does not auto-start AgentDB. Start it through your agent harness MCP config, a project-local extension, or an explicit user command.
+Pi extension docs explicitly warn against starting long-lived resources in extension factory startup, so the Pi package never auto-starts AgentDB. Start it through your harness MCP config, a project-local extension, or an explicit user command when needed.
 
 ### Pi Package Manifest
 
@@ -192,6 +215,19 @@ Pi extension docs explicitly warn against starting long-lived resources in exten
           "reviewCommand": "/ultrareview",
           "maxOrchestrationLoops": 20,
           "completionStandard": "plan, implementation, research optimization, and review all agree there is no remaining required work"
+        },
+        "memory": {
+          "agentdb": {
+            "enabled": false,
+            "dbPath": ""
+          },
+          "agentWisdom": {
+            "enabled": false,
+            "name": "agent-wisdom",
+            "command": [],
+            "root": "",
+            "dbPath": ""
+          }
         }
       }
     ]

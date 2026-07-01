@@ -49,9 +49,6 @@
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.17.0"
   },
-  "optionalDependencies": {
-    "agentdb": "^3.0.0-alpha.17"
-  },
   "devDependencies": {
     "@opencode-ai/plugin": "1.17.11"
   }

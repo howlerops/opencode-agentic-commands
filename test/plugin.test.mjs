@@ -24,6 +24,39 @@ async function expands(plugin, slash, expected, options) {
 }
 
 {
+  const hooks = await AgenticCommandsPlugin({}, {
+    memory: {
+      agentdb: { enabled: true, dbPath: "/tmp/agentdb.rvf" },
+      agentWisdom: {
+        enabled: true,
+        name: "odi-agent-wisdom",
+        command: ["node", "/tmp/agent-wisdom.mjs", "mcp"],
+        root: "/tmp/odi-control-plane",
+        dbPath: "/tmp/odi-memory.rvf",
+      },
+    },
+  })
+  const config = {}
+  await hooks.config(config)
+  assert.deepEqual(config.mcp.agentdb.command, ["npx", "-y", "agentdb@latest", "mcp", "start"])
+  assert.equal(config.mcp.agentdb.env.AGENTDB_PATH, "/tmp/agentdb.rvf")
+  assert.deepEqual(config.mcp["odi-agent-wisdom"].command, ["node", "/tmp/agent-wisdom.mjs", "mcp"])
+  assert.equal(config.mcp["odi-agent-wisdom"].env.ODI_ROOT, "/tmp/odi-control-plane")
+  assert.equal(config.mcp["odi-agent-wisdom"].env.ODI_AGENTDB_PATH, "/tmp/odi-memory.rvf")
+}
+
+{
+  const hooks = await AgenticCommandsPlugin({}, {
+    memory: {
+      agentdb: { enabled: true, dbPath: "/tmp/new.rvf" },
+    },
+  })
+  const config = { mcp: { agentdb: { type: "local", command: ["existing"], enabled: true } } }
+  await hooks.config(config)
+  assert.deepEqual(config.mcp.agentdb.command, ["existing"])
+}
+
+{
   const text = await expands(GoalPlugin, "/goal add auth", /baro --llm opencode -m openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /add auth/)
 }

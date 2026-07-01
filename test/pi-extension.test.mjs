@@ -2,9 +2,6 @@ import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import agenticCommands, { COMMANDS } from "../pi/extensions/agentic-commands.js"
 
-const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"))
-assert.match(packageJson.optionalDependencies.agentdb, /^\^3\.0\.0-alpha\./)
-
 const registered = new Map()
 
 agenticCommands({

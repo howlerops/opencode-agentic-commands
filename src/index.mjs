@@ -14,6 +14,75 @@ const DEFAULT_OPTIONS = {
   ultraplan: {},
   ultrareview: {},
   thanos: {},
+  memory: {},
+}
+
+const DEFAULT_MEMORY_OPTIONS = {
+  agentdb: {
+    enabled: false,
+    name: "agentdb",
+    command: ["npx", "-y", "agentdb@latest", "mcp", "start"],
+    dbPath: "",
+    overwrite: false,
+  },
+  agentWisdom: {
+    enabled: false,
+    name: "agent-wisdom",
+    command: [],
+    root: "",
+    dbPath: "",
+    overwrite: false,
+  },
+}
+
+function normalizeMemoryOptions(options = {}) {
+  return {
+    agentdb: { ...DEFAULT_MEMORY_OPTIONS.agentdb, ...(options.agentdb || {}) },
+    agentWisdom: { ...DEFAULT_MEMORY_OPTIONS.agentWisdom, ...(options.agentWisdom || {}) },
+  }
+}
+
+function setMcp(config, name, value, overwrite) {
+  config.mcp ||= {}
+  if (!overwrite && config.mcp[name]) return
+  config.mcp[name] = value
+}
+
+export function applyMemoryConfig(opencodeConfig, options = {}) {
+  const memory = normalizeMemoryOptions(options)
+
+  if (memory.agentdb.enabled) {
+    const env = {}
+    if (memory.agentdb.dbPath) env.AGENTDB_PATH = memory.agentdb.dbPath
+    setMcp(
+      opencodeConfig,
+      memory.agentdb.name,
+      {
+        type: "local",
+        command: memory.agentdb.command,
+        ...(Object.keys(env).length ? { env } : {}),
+        enabled: true,
+      },
+      memory.agentdb.overwrite,
+    )
+  }
+
+  if (memory.agentWisdom.enabled) {
+    const env = {}
+    if (memory.agentWisdom.root) env.ODI_ROOT = memory.agentWisdom.root
+    if (memory.agentWisdom.dbPath) env.ODI_AGENTDB_PATH = memory.agentWisdom.dbPath
+    setMcp(
+      opencodeConfig,
+      memory.agentWisdom.name,
+      {
+        type: "local",
+        command: memory.agentWisdom.command,
+        ...(Object.keys(env).length ? { env } : {}),
+        enabled: true,
+      },
+      memory.agentWisdom.overwrite,
+    )
+  }
 }
 
 function chainHooks(hooksList, hookName) {
@@ -39,6 +108,7 @@ export async function AgenticCommandsPlugin(input, options = {}) {
 
   return {
     config(opencodeConfig) {
+      applyMemoryConfig(opencodeConfig, config.memory)
       for (const hooks of hooksList) hooks.config?.(opencodeConfig)
     },
     "chat.message": chainHooks(hooksList, "chat.message"),
