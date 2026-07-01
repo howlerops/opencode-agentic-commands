@@ -40,13 +40,10 @@ function trimSlash(value) {
   return String(value || "").replace(/\/$/, "")
 }
 
-function encodeRoutePath(value) {
-  return String(value || "")
-    .replace(/^\/+/, "")
-    .split("/")
-    .filter(Boolean)
-    .map(encodeURIComponent)
-    .join("/")
+function routeDirectory(session) {
+  const directory = session.location?.directory || session.directory || session.path || ""
+  if (!directory) return ""
+  return directory.startsWith("/") ? directory : `/${directory}`
 }
 
 function workspaceDirectory(pluginInput = {}) {
@@ -182,7 +179,8 @@ function authHeader(state) {
 }
 
 function sessionPath(session) {
-  return encodeRoutePath(session.path || session.directory || "")
+  const directory = routeDirectory(session)
+  return directory ? Buffer.from(directory).toString("base64url") : ""
 }
 
 function sessionUrl(baseUrl, session) {

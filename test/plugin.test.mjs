@@ -256,7 +256,7 @@ await withSessionServer([
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
     const output = { parts: [] }
     await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "status" }, output)
-    assert.match(output.parts[0].text, /Current TUI session URL: https:\/\/example\.trycloudflare\.com\/Users\/test\/project\/session\/ses_current/)
+    assert.match(output.parts[0].text, /Current TUI session URL: https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
     assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
   } finally {
     await rm(temp, { recursive: true, force: true })
