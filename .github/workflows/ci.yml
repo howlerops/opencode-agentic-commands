@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm test
       - run: node --check pi/extensions/agentic-commands.js
       - run: npm pack --dry-run
