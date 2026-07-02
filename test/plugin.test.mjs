@@ -226,13 +226,21 @@ createServer((request, response) => {
 }
 
 {
-  const { commands } = await commandsFrom(BifrostPlugin)
+  const { commands } = await commandsFrom(BifrostPlugin, {})
   assert.match(commands.bifrost.template, /^Return this Bifrost output exactly and do not add commentary:/)
   assert.match(commands.bifrost.template, /!`node /)
   assert.match(commands.bifrost.template, /-- start`$/)
   assert.doesNotMatch(commands.bifrost.template, /\$ARGUMENTS/)
   assert.doesNotMatch(commands.bifrost.template, /Request:/)
   assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
+}
+
+{
+  const hooks = await BifrostPlugin({ serverUrl: new URL("http://127.0.0.1:3333/") }, {})
+  const config = {}
+  await hooks.config(config)
+  assert.match(config.command.bifrost.template, /--active-server-url 'http:\/\/127\.0\.0\.1:3333'/)
+  assert.doesNotMatch(config.command.bifrost.template, /\$ARGUMENTS/)
 }
 
 {
