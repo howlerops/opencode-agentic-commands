@@ -82,6 +82,7 @@ function parseRequest(args = "") {
     mode,
     port: portMatch ? Number(portMatch[1]) : 0,
     newServer: /\bnew\b|--new/.test(String(args)),
+    webMode: /\bweb\b|\bfallback\b|--web|--fallback/.test(String(args)),
   }
 }
 
@@ -456,9 +457,23 @@ async function startBifrost(pluginInput, config, request) {
     return ""
   }
 
-  if (config.serverMode !== "web" && activeUrl) {
+  const allowManagedWeb = config.serverMode === "web" || request.webMode
+  if (!activeUrl && !allowManagedWeb) {
+    return `Bifrost start failed: no active OpenCode server URL was available, so Bifrost did not start a separate Web server.
+
+Two-way no-gap sync requires active mode, which should show:
+Server mode: active
+Attached to active TUI server: yes
+Web PID: none
+
+If you are in the OpenCode TUI, quit and restart OpenCode so the latest plugin can receive the active server URL, then run /bifrost start again.
+
+If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.`
+  }
+
+  if (!allowManagedWeb && activeUrl) {
     await useActiveProxy()
-  } else if (config.serverMode === "active") {
+  } else if (config.serverMode === "active" && !request.webMode) {
     if (!activeUrl) return "Bifrost start failed: active server mode was requested, but OpenCode did not provide an active server URL."
   } else {
     const error = await useManagedWeb()
@@ -470,7 +485,7 @@ async function startBifrost(pluginInput, config, request) {
   if (!localStatus) {
     stopStartedPid(proxyPid)
     stopStartedPid(webPid)
-    if (serverMode === "active" && config.serverMode === "auto") {
+    if (serverMode === "active" && allowManagedWeb) {
       await sleep(250)
       const error = await useManagedWeb()
       if (error) return error
@@ -480,7 +495,9 @@ async function startBifrost(pluginInput, config, request) {
         return `Bifrost start failed: OpenCode server did not respond at ${localUrl}.${webLog ? `\nWeb log: ${webLog}` : ""}`
       }
     } else {
-      return `Bifrost start failed: OpenCode server did not respond at ${localUrl}.${webLog ? `\nWeb log: ${webLog}` : ""}${proxyLog ? `\nProxy log: ${proxyLog}` : ""}`
+      return `Bifrost start failed: active OpenCode server did not respond at ${localUrl}, so Bifrost did not fall back to a separate Web server.
+
+Two-way no-gap sync requires an active upstream server. If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.${webLog ? `\nWeb log: ${webLog}` : ""}${proxyLog ? `\nProxy log: ${proxyLog}` : ""}`
     }
   }
 

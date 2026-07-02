@@ -23,13 +23,13 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 
 `/bifrost` starts or manages an OpenCode remote portal plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
 
-- `/bifrost` or `/bifrost start` prefers the active OpenCode server behind the current TUI, places a Bifrost-managed authenticated local proxy in front of it, exposes that proxy through Cloudflare Quick Tunnel by default, and opens the current-session deep link when available.
-- If the active server is unavailable, `/bifrost start` falls back to starting a separate local OpenCode Web server with a generated temporary password.
+- `/bifrost` or `/bifrost start` requires the active OpenCode server behind the current TUI, places a Bifrost-managed authenticated local proxy in front of it, exposes that proxy through Cloudflare Quick Tunnel by default, and opens the current-session deep link when available.
+- If the active server is unavailable, `/bifrost start` fails loudly instead of starting a separate non-syncing Web server. Use `/bifrost start web` only when you explicitly want a separate browser portal without TUI/Web live sync.
 - `/bifrost status` reports known local server, tunnel, URL, username, password, current TUI session URL when available, direct recent-session URLs, live TUI control commands, PID, state, and log information.
 - `/bifrost sync` is a status-focused diagnostic view for Web/TUI synchronization. It verifies the event stream when possible and explains that Web session URLs open browser history while the official live-control path for the active local TUI is the `/tui/*` API.
 - `/bifrost stop` stops only the selected Bifrost-managed tunnel and any Bifrost-managed OpenCode Web process. It does not stop an active TUI server that Bifrost only attached to.
 
-The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. Active-server mode does not require restarting OpenCode with `OPENCODE_SERVER_PASSWORD`: Bifrost generates a temporary portal password at the proxy layer when needed, forwards to the active server, and keeps Web and TUI attached to one OpenCode server. Fallback Web mode generates a temporary password when needed, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, TUI control API commands, attach command, logs, and stop command in the terminal output. The default username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
+The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. Active-server mode does not require restarting OpenCode with `OPENCODE_SERVER_PASSWORD`: Bifrost generates a temporary portal password at the proxy layer when needed, forwards to the active server, and keeps Web and TUI attached to one OpenCode server. Explicit Web mode (`/bifrost start web`) generates a temporary password when needed, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, TUI control API commands, attach command, logs, and stop command in the terminal output. The default username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
 
 OpenCode Web session URLs are browser-history views. Remote prompts submitted through Web are written to the OpenCode session and are observable on `/event`, but SSE events do not include the originating client. Bifrost therefore does not auto-relay Web prompts into `/tui/submit-prompt`, because doing so would duplicate messages. For live remote control of the local TUI, use the printed `/tui/append-prompt`, `/tui/submit-prompt`, `/tui/clear-prompt`, and `/event` commands.
 
@@ -317,7 +317,7 @@ Pi package startup never auto-starts long-lived memory resources. Start those th
 | Vidar | Norse figure associated with resolve | Keeps working until the task is actually complete. |
 | Skuld | Norse Norn tied to what is owed or must become | Reviews consequences, risks, and remaining obligations. |
 | Polaris | North Star | Guides the whole journey end to end. |
-| Bifrost | Norse bridge between worlds | Opens a controlled remote path to the active OpenCode server or fallback Web. |
+| Bifrost | Norse bridge between worlds | Opens a controlled remote path to the active OpenCode server; explicit Web mode is separate and non-syncing. |
 
 ## Test
 

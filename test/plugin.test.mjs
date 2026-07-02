@@ -389,7 +389,7 @@ await withSessionServer([
     const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 })
     const output = { parts: [] }
     await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
-    assert.match(output.parts[0].text, /Bifrost start failed: OpenCode server did not respond/)
+    assert.match(output.parts[0].text, /Bifrost start failed: active OpenCode server did not respond/)
     await new Promise((resolve) => setTimeout(resolve, 250))
     await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
   } finally {
@@ -398,14 +398,36 @@ await withSessionServer([
 }
 
 {
-  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-fallback-test-"))
-  const originalPath = process.env.PATH
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-no-fallback-test-"))
+  const originalActiveServerUrl = process.env.BIFROST_ACTIVE_SERVER_URL
   try {
+    delete process.env.BIFROST_ACTIVE_SERVER_URL
+    const port = await freePort()
+    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 500 })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
+    assert.match(output.parts[0].text, /no active OpenCode server URL was available/)
+    assert.match(output.parts[0].text, /did not start a separate Web server/)
+    assert.match(output.parts[0].text, /run \/bifrost start web/)
+    await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
+  } finally {
+    if (originalActiveServerUrl === undefined) delete process.env.BIFROST_ACTIVE_SERVER_URL
+    else process.env.BIFROST_ACTIVE_SERVER_URL = originalActiveServerUrl
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-explicit-web-test-"))
+  const originalPath = process.env.PATH
+  const originalActiveServerUrl = process.env.BIFROST_ACTIVE_SERVER_URL
+  try {
+    delete process.env.BIFROST_ACTIVE_SERVER_URL
     await writeFakeOpencode(path.join(temp, "bin"))
     process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
-    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 3000 })
+    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 3000 })
     const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start" }, output)
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start web" }, output)
     assert.match(output.parts[0].text, /Bifrost portal partially started|Bifrost portal started/)
     assert.match(output.parts[0].text, /Server mode: web/)
     assert.match(output.parts[0].text, /Attached to active TUI server: no/)
@@ -414,6 +436,8 @@ await withSessionServer([
     assert.match(stopOutput.parts[0].text, /OpenCode Web PID .*: stopped/)
   } finally {
     process.env.PATH = originalPath
+    if (originalActiveServerUrl === undefined) delete process.env.BIFROST_ACTIVE_SERVER_URL
+    else process.env.BIFROST_ACTIVE_SERVER_URL = originalActiveServerUrl
     await rm(temp, { recursive: true, force: true })
   }
 }
