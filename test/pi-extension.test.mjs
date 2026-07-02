@@ -47,6 +47,7 @@ assert.match(COMMANDS.polaris.render("ship it"), /\/hugin, \/tyr, \/eitri, \/mun
 assert.match(COMMANDS.polaris.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
 assert.match(COMMANDS.skuld.render("current diff"), /Review target:\ncurrent diff/)
 assert.match(COMMANDS.bifrost.render("status"), /opencode-bifrost --state-dir \.opencode\/bifrost/)
+assert.doesNotMatch(COMMANDS.bifrost.render("status; touch injected"), /-- status; touch injected/)
 assert.doesNotMatch(COMMANDS.bifrost.render("status"), /Start workflow:/)
 
 for (const name of registered.keys()) {

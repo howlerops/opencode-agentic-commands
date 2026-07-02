@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { chmod, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import path from "node:path"
@@ -37,6 +37,35 @@ async function withSessionServer(sessions, fn) {
   } finally {
     await new Promise((resolve) => server.close(resolve))
   }
+}
+
+async function freePort() {
+  const server = createServer()
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
+  const port = server.address().port
+  await new Promise((resolve) => server.close(resolve))
+  return port
+}
+
+async function writeFakeOpencode(binDir) {
+  await mkdir(binDir, { recursive: true })
+  const fakeOpencode = path.join(binDir, "opencode")
+  await writeFile(fakeOpencode, `#!/usr/bin/env node
+const { createServer } = require("node:http")
+const port = Number(process.argv[process.argv.indexOf("--port") + 1])
+const host = process.argv[process.argv.indexOf("--hostname") + 1] || "127.0.0.1"
+createServer((request, response) => {
+  if (request.url === "/session") {
+    response.setHeader("content-type", "application/json")
+    response.end(JSON.stringify([{ id: "ses_fake", directory: "/tmp/fake", time: { updated: 1 } }]))
+    return
+  }
+  response.setHeader("content-type", "text/html")
+  response.end("<html>fake opencode</html>")
+}).listen(port, host)
+`)
+  await chmod(fakeOpencode, 0o755)
+  return fakeOpencode
 }
 
 {
@@ -181,9 +210,26 @@ async function withSessionServer(sessions, fn) {
 }
 
 {
+  const hooks = await BifrostPlugin({ serverUrl: new URL("http://127.0.0.1:3333/") }, {})
+  const envOutput = { env: {} }
+  await hooks["shell.env"]({ sessionID: "ses_current" }, envOutput)
+  assert.equal(envOutput.env.BIFROST_SESSION_ID, "ses_current")
+  assert.equal(envOutput.env.BIFROST_ACTIVE_SERVER_URL, "http://127.0.0.1:3333")
+}
+
+{
+  const hooks = await AgenticCommandsPlugin({ serverUrl: new URL("http://127.0.0.1:4444/") }, {})
+  const envOutput = { env: {} }
+  await hooks["shell.env"]({ sessionID: "ses_current" }, envOutput)
+  assert.equal(envOutput.env.BIFROST_SESSION_ID, "ses_current")
+  assert.equal(envOutput.env.BIFROST_ACTIVE_SERVER_URL, "http://127.0.0.1:4444")
+}
+
+{
   const { commands } = await commandsFrom(BifrostPlugin)
-  assert.match(commands.bifrost.template, /^Return this Bifrost output exactly and do not add commentary:/)
-  assert.match(commands.bifrost.template, /!`node /)
+  assert.match(commands.bifrost.template, /handled by the bifrost command hook/)
+  assert.doesNotMatch(commands.bifrost.template, /!`/)
+  assert.doesNotMatch(commands.bifrost.template, /\$ARGUMENTS/)
   assert.doesNotMatch(commands.bifrost.template, /Request:/)
   assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
 }
@@ -264,6 +310,95 @@ await withSessionServer([
     await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "sync" }, output)
     assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
     assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+await withSessionServer([
+  { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
+], async (localUrl) => {
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-active-status-test-"))
+  try {
+    const stateDir = path.join(temp, ".bifrost")
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl,
+      publicUrl: "https://active.example.trycloudflare.com",
+      username: "opencode",
+      password: "existing-active-password",
+      passwordSource: "OPENCODE_SERVER_PASSWORD from active OpenCode server",
+      webPid: null,
+      tunnelPid: process.pid,
+      tunnelProvider: "cloudflared",
+      serverMode: "active",
+      attachedToActiveServer: true,
+    })}\n`)
+    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "status" }, output)
+    assert.match(output.parts[0].text, /Server mode: active/)
+    assert.match(output.parts[0].text, /Attached to active TUI server: yes/)
+    assert.match(output.parts[0].text, /Web PID: none \(active server is not Bifrost-managed\)/)
+    assert.match(output.parts[0].text, /Password source: OPENCODE_SERVER_PASSWORD from active OpenCode server/)
+    assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/active\.example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-active-fail-test-"))
+  const port = await freePort()
+  try {
+    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
+    assert.match(output.parts[0].text, /Bifrost start failed: OpenCode server did not respond/)
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-fallback-test-"))
+  const originalPath = process.env.PATH
+  try {
+    await writeFakeOpencode(path.join(temp, "bin"))
+    process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
+    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 3000 })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start" }, output)
+    assert.match(output.parts[0].text, /Bifrost portal partially started|Bifrost portal started/)
+    assert.match(output.parts[0].text, /Server mode: web/)
+    assert.match(output.parts[0].text, /Attached to active TUI server: no/)
+    const stopOutput = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "stop" }, stopOutput)
+    assert.match(stopOutput.parts[0].text, /OpenCode Web PID .*: stopped/)
+  } finally {
+    process.env.PATH = originalPath
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+await withSessionServer([
+  { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
+], async (localUrl) => {
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-state-mode-test-"))
+  try {
+    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL(localUrl) }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 1000 })
+    const output = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start" }, output)
+    assert.match(output.parts[0].text, /Bifrost portal partially started|Bifrost portal started/)
+    const stateDir = path.join(temp, ".bifrost")
+    const statePath = path.join(stateDir, "state.json")
+    assert.equal((await stat(stateDir)).mode & 0o777, 0o700)
+    assert.equal((await stat(statePath)).mode & 0o777, 0o600)
+    const stopOutput = { parts: [] }
+    await hooks["command.execute.before"]({ command: "bifrost", arguments: "stop" }, stopOutput)
+    assert.match(stopOutput.parts[0].text, /Bifrost proxy PID .*: stopped/)
   } finally {
     await rm(temp, { recursive: true, force: true })
   }

@@ -15,20 +15,21 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 | `/vidar` | Persist | You want repeated `/tyr` implementation loops plus review repair loops until the work is complete. |
 | `/skuld` | Review | You want PR-style review, targeted repair, re-verification, and repeated review until clean. |
 | `/polaris` | Orchestrate | You want the whole flow: plan, create agents if needed, research, implement, review, and repair. |
-| `/bifrost` | Remote | You want to start, inspect, or stop a secure OpenCode Web remote portal with a tunnel. |
+| `/bifrost` | Remote | You want to start, inspect, or stop a secure remote portal to the active OpenCode server with a tunnel. |
 
 `/bifrost` is intentionally separate from `/polaris` and the implementation/review loops. It manages remote access only; the other commands do not depend on it.
 
 ## Bifrost Remote Portal
 
-`/bifrost` starts or manages OpenCode Web plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
+`/bifrost` starts or manages an OpenCode remote portal plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
 
-- `/bifrost` or `/bifrost start` starts or reuses a local OpenCode Web server, exposes it through Cloudflare Quick Tunnel by default, and opens the current-session deep link when available.
+- `/bifrost` or `/bifrost start` prefers the active OpenCode server behind the current TUI, places a Bifrost-managed authenticated local proxy in front of it, exposes that proxy through Cloudflare Quick Tunnel by default, and opens the current-session deep link when available.
+- If the active server is unavailable, `/bifrost start` falls back to starting a separate local OpenCode Web server with a generated temporary password.
 - `/bifrost status` reports known local server, tunnel, URL, username, password, current TUI session URL when available, direct recent-session URLs, live TUI control commands, PID, state, and log information.
 - `/bifrost sync` is a status-focused diagnostic view for Web/TUI synchronization. It verifies the event stream when possible and explains that Web session URLs open browser history while the official live-control path for the active local TUI is the `/tui/*` API.
-- `/bifrost stop` stops only the selected Bifrost-managed tunnel and OpenCode Web process.
+- `/bifrost stop` stops only the selected Bifrost-managed tunnel and any Bifrost-managed OpenCode Web process. It does not stop an active TUI server that Bifrost only attached to.
 
-The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, TUI control API commands, attach command, logs, and stop command in the terminal output. The default OpenCode Web username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
+The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. Active-server mode does not require restarting OpenCode with `OPENCODE_SERVER_PASSWORD`: Bifrost generates a temporary portal password at the proxy layer when needed, forwards to the active server, and keeps Web and TUI attached to one OpenCode server. Fallback Web mode generates a temporary password when needed, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, TUI control API commands, attach command, logs, and stop command in the terminal output. The default username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
 
 OpenCode Web session URLs are browser-history views. Remote prompts submitted through Web are written to the OpenCode session and are observable on `/event`, but SSE events do not include the originating client. Bifrost therefore does not auto-relay Web prompts into `/tui/submit-prompt`, because doing so would duplicate messages. For live remote control of the local TUI, use the printed `/tui/append-prompt`, `/tui/submit-prompt`, `/tui/clear-prompt`, and `/event` commands.
 
@@ -234,6 +235,7 @@ All options are optional. This block shows the defaults and the new command keys
         "bifrost": {
           "preferredTunnel": "cloudflared",
           "fallbackTunnel": "ngrok",
+          "serverMode": "auto",
           "stateDir": ".opencode/bifrost",
           "defaultHost": "127.0.0.1"
         },
@@ -315,7 +317,7 @@ Pi package startup never auto-starts long-lived memory resources. Start those th
 | Vidar | Norse figure associated with resolve | Keeps working until the task is actually complete. |
 | Skuld | Norse Norn tied to what is owed or must become | Reviews consequences, risks, and remaining obligations. |
 | Polaris | North Star | Guides the whole journey end to end. |
-| Bifrost | Norse bridge between worlds | Opens a controlled remote path to OpenCode Web. |
+| Bifrost | Norse bridge between worlds | Opens a controlled remote path to the active OpenCode server or fallback Web. |
 
 ## Test
 

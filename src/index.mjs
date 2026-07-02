@@ -153,6 +153,7 @@ export async function AgenticCommandsPlugin(input, options = {}) {
     },
     "chat.message": chainHooks(hooksList, "chat.message"),
     "command.execute.before": chainHooks(hooksList, "command.execute.before"),
+    "shell.env": chainHooks(hooksList, "shell.env"),
   }
 }
 

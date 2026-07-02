@@ -36,7 +36,7 @@
   },
   "scripts": {
     "install:hooks": "sh scripts/hooks/install.sh",
-    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs"
+    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs"
   },
   "keywords": [
     "opencode",
