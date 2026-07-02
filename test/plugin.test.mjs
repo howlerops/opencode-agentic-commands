@@ -229,6 +229,12 @@ async function withSessionServer(sessions, fn) {
     assert.match(output.parts[0].text, /Password: bifrost-test-password/)
     assert.match(output.parts[0].text, /Copy login: url=https:\/\/example\.trycloudflare\.com username=opencode password=bifrost-test-password/)
     assert.match(output.parts[0].text, /Session links: unavailable/)
+    assert.match(output.parts[0].text, /Live TUI control API:/)
+    assert.match(output.parts[0].text, /Event stream status: unavailable/)
+    assert.match(output.parts[0].text, /\/tui\/append-prompt/)
+    assert.match(output.parts[0].text, /\/tui\/submit-prompt/)
+    assert.match(output.parts[0].text, /\/event/)
+    assert.match(output.parts[0].text, /Bifrost does not auto-forward Web prompts/)
   } finally {
     process.env.HOME = originalHome
     await rm(temp, { recursive: true, force: true })
@@ -255,8 +261,8 @@ await withSessionServer([
     })}\n`)
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
     const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "status" }, output)
-    assert.match(output.parts[0].text, /Current TUI session URL: https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
+    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "sync" }, output)
+    assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
     assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
   } finally {
     await rm(temp, { recursive: true, force: true })

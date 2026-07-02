@@ -24,10 +24,13 @@ The command names use a spelling-aware Norse/navigation theme so they are short,
 `/bifrost` starts or manages OpenCode Web plus a public tunnel through an action-first OpenCode command. In Pi, it provides the same operational workflow as a prompt template.
 
 - `/bifrost` or `/bifrost start` starts or reuses a local OpenCode Web server, exposes it through Cloudflare Quick Tunnel by default, and opens the current-session deep link when available.
-- `/bifrost status` reports known local server, tunnel, URL, username, password, current TUI session URL when available, direct recent-session URLs, PID, state, and log information.
+- `/bifrost status` reports known local server, tunnel, URL, username, password, current TUI session URL when available, direct recent-session URLs, live TUI control commands, PID, state, and log information.
+- `/bifrost sync` is a status-focused diagnostic view for Web/TUI synchronization. It verifies the event stream when possible and explains that Web session URLs open browser history while the official live-control path for the active local TUI is the `/tui/*` API.
 - `/bifrost stop` stops only the selected Bifrost-managed tunnel and OpenCode Web process.
 
-The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, attach command, logs, and stop command in the terminal output. The default OpenCode Web username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
+The workflow prefers `cloudflared tunnel --url http://127.0.0.1:<port>` and falls back to `ngrok http http://127.0.0.1:<port>` when Cloudflare is unavailable. It requires a non-empty `OPENCODE_SERVER_PASSWORD` or a generated temporary password before exposing anything publicly, binds OpenCode Web to `127.0.0.1` by default, and prints the public URL, username, password, recent session URLs, TUI control API commands, attach command, logs, and stop command in the terminal output. The default OpenCode Web username is `opencode` unless `OPENCODE_SERVER_USERNAME` is set.
+
+OpenCode Web session URLs are browser-history views. Remote prompts submitted through Web are written to the OpenCode session and are observable on `/event`, but SSE events do not include the originating client. Bifrost therefore does not auto-relay Web prompts into `/tui/submit-prompt`, because doing so would duplicate messages. For live remote control of the local TUI, use the printed `/tui/append-prompt`, `/tui/submit-prompt`, `/tui/clear-prompt`, and `/event` commands.
 
 ## GitHub PR Review Mode
 

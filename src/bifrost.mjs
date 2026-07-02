@@ -63,7 +63,7 @@ function candidateStateDirs(pluginInput, config) {
 function parseRequest(args = "") {
   const tokens = String(args).trim().split(/\s+/).filter(Boolean)
   const first = tokens[0]?.toLowerCase()
-  const mode = ["start", "status", "stop"].includes(first) ? first : "start"
+  const mode = ["start", "status", "stop", "sync"].includes(first) ? first : "start"
   const portMatch = String(args).match(/(?:--port\s+|port\s+|:)(\d{2,5})\b/)
   return {
     mode,
@@ -172,6 +172,25 @@ async function waitForTunnelUrl(logPath, timeoutMs) {
   return ""
 }
 
+async function eventStreamAvailable(state) {
+  const baseUrl = trimSlash(state?.localUrl || "")
+  if (!baseUrl) return false
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 1500)
+  try {
+    const response = await fetch(`${baseUrl}/event`, { headers: authHeader(state), signal: controller.signal })
+    if (!response.ok || !response.body) return false
+    const reader = response.body.getReader()
+    const { value } = await reader.read()
+    await reader.cancel().catch(() => {})
+    return Boolean(value?.length)
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 function authHeader(state) {
   const username = state.username || "opencode"
   if (!state.password) return {}
@@ -222,11 +241,28 @@ function formatSessionLinks(links) {
   const current = links[0]
   const label = current.preferred ? "Current TUI session" : "Most recent session"
   const recent = links.map((session, index) => `${index + 1}. ${session.preferred ? "[current] " : ""}${session.title} (${session.directory})\n   ${session.url}`).join("\n")
-  return `${label} URL: ${current.url}
+  return `Web session history URL (${label}): ${current.url}
 Current session title: ${current.title}
 
 Recent session URLs:
 ${recent}`
+}
+
+function formatTuiControl(state, sync = {}) {
+  const baseUrl = trimSlash(state.publicUrl || state.localUrl || "")
+  if (!baseUrl) return "Live TUI control API: unavailable"
+  const username = state.username || "opencode"
+  const auth = `-u ${shellQuote(`${username}:${state.password || ""}`)}`
+  const text = "<prompt text>"
+  const eventStatus = sync.eventStreamAvailable ? "available" : "unavailable"
+  return `Live TUI control API:
+Event stream status: ${eventStatus}
+Append prompt: curl ${auth} -X POST ${shellQuote(`${baseUrl}/tui/append-prompt`)} -H 'content-type: application/json' --data ${shellQuote(JSON.stringify({ text }))}
+Submit prompt: curl ${auth} -X POST ${shellQuote(`${baseUrl}/tui/submit-prompt`)}
+Clear prompt: curl ${auth} -X POST ${shellQuote(`${baseUrl}/tui/clear-prompt`)}
+Events stream: curl ${auth} -N ${shellQuote(`${baseUrl}/event`)}
+
+Sync note: Web session URLs open session history in the browser and Web prompts are written directly to the OpenCode session. SSE events expose message text and session IDs, but not client origin, so Bifrost does not auto-forward Web prompts into /tui/submit-prompt because that would duplicate messages. The official live-control path for the active local TUI is the /tui API above.`
 }
 
 async function statusText(stateDir, state, preferredSessionID = "", sessionLinkList) {
@@ -235,6 +271,7 @@ async function statusText(stateDir, state, preferredSessionID = "", sessionLinkL
   const tunnelAlive = pidAlive(state.tunnelPid)
   const username = state.username || "opencode"
   const links = sessionLinkList || (webAlive ? await sessionLinks(state, preferredSessionID) : [])
+  const sync = { eventStreamAvailable: webAlive ? await eventStreamAvailable(state) : false }
   return `Bifrost status: ${webAlive && tunnelAlive ? "running" : "partial or stale"}
 
 Open: ${state.publicUrl || state.localUrl || "unknown"}
@@ -244,6 +281,8 @@ Password: ${state.password || "unknown"}
 Copy login: url=${state.publicUrl || state.localUrl || "unknown"} username=${username} password=${state.password || "unknown"}
 
 ${formatSessionLinks(links)}
+
+${formatTuiControl(state, sync)}
 
 Local URL: ${state.localUrl || "unknown"}
 Public URL: ${state.publicUrl || "unknown"}
@@ -353,7 +392,7 @@ async function runBifrost(pluginInput, config, args, sessionID = "") {
   const request = parseRequest(args)
   request.sessionID = sessionID
   const { stateDir, state } = await findState(pluginInput, config)
-  if (request.mode === "status") return statusText(stateDir, state, request.sessionID)
+  if (request.mode === "status" || request.mode === "sync") return statusText(stateDir, state, request.sessionID)
   if (request.mode === "stop") return stopBifrost(stateDir)
   return startBifrost(pluginInput, config, request)
 }
