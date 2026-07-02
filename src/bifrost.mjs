@@ -27,9 +27,8 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  const activeServerArg = options.activeServerUrl ? ` --active-server-url ${shellQuote(options.activeServerUrl)}` : ""
   return `Return this Bifrost output exactly and do not add commentary:
-!\`node ${shellQuote(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs"))} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} --server-mode ${shellQuote(options.serverMode)}${activeServerArg} -- start\``
+!\`node ${shellQuote(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs"))} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} --server-mode ${shellQuote(options.serverMode)} --active-server-url "$BIFROST_PLUGIN_ACTIVE_SERVER_URL" -- start\``
 }
 
 function sleep(ms) {
@@ -579,7 +578,7 @@ async function runBifrost(pluginInput, config, args, sessionID = "") {
 
 export async function BifrostPlugin(pluginInput, options) {
   const config = normalizeOptions(options)
-  const template = bifrostTemplate({ ...config, activeServerUrl: activeServerUrl(pluginInput) })
+  const template = bifrostTemplate(config)
 
   return {
     config(opencodeConfig) {
@@ -597,7 +596,7 @@ export async function BifrostPlugin(pluginInput, options) {
     "shell.env": async (input, output) => {
       if (input.sessionID) output.env.BIFROST_SESSION_ID = input.sessionID
       const serverUrl = activeServerUrl(pluginInput)
-      if (serverUrl) output.env.BIFROST_ACTIVE_SERVER_URL = serverUrl
+      output.env.BIFROST_PLUGIN_ACTIVE_SERVER_URL = serverUrl && await activeServerStatus(serverUrl) ? serverUrl : ""
     },
   }
 }
