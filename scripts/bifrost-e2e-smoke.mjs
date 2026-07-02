@@ -75,9 +75,9 @@ try {
 
   const runner = path.join(root, "scripts/bifrost-runner.mjs")
   const runnerOutput = await new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [runner, "--state-dir", stateDirName, "--host", host, "--preferred-tunnel", tunnelCommand, "--fallback-tunnel", tunnelCommand, "--server-mode", "auto", "--startup-timeout-ms", "10000", "--", "start"], {
+    const child = spawn(process.execPath, [runner, "--state-dir", stateDirName, "--host", host, "--preferred-tunnel", tunnelCommand, "--fallback-tunnel", tunnelCommand, "--server-mode", "auto", "--startup-timeout-ms", "10000", "--active-server-url", upstreamUrl, "--", "start"], {
       cwd: workdir,
-      env: { ...process.env, BIFROST_ACTIVE_SERVER_URL: upstreamUrl, BIFROST_SESSION_ID: "" },
+      env: { ...process.env, BIFROST_SESSION_ID: "" },
       stdio: ["ignore", "pipe", "pipe"],
     })
     let output = ""
@@ -115,7 +115,7 @@ try {
 } finally {
   try {
     await new Promise((resolve) => {
-      const child = spawn(process.execPath, [path.join(root, "scripts/bifrost-runner.mjs"), "--state-dir", stateDirName, "--server-mode", "active", "--", "stop"], { cwd: workdir, env: { ...process.env, BIFROST_ACTIVE_SERVER_URL: upstreamUrl }, stdio: "ignore" })
+      const child = spawn(process.execPath, [path.join(root, "scripts/bifrost-runner.mjs"), "--state-dir", stateDirName, "--server-mode", "active", "--active-server-url", upstreamUrl, "--", "stop"], { cwd: workdir, env: process.env, stdio: "ignore" })
       child.on("exit", resolve)
     })
   } catch {

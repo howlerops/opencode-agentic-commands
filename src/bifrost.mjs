@@ -87,7 +87,17 @@ function parseRequest(args = "") {
 }
 
 function activeServerUrl(pluginInput = {}) {
-  return toUrlString(pluginInput.serverUrl || process.env.BIFROST_ACTIVE_SERVER_URL)
+  return toUrlString(pluginInput.serverUrl)
+}
+
+async function activeServerStatus(url, timeoutMs = 1500) {
+  if (!url) return 0
+  try {
+    const response = await fetch(`${trimSlash(url)}/session`, { signal: AbortSignal.timeout(timeoutMs) })
+    return response.status > 0 && response.status < 500 ? response.status : 0
+  } catch {
+    return 0
+  }
 }
 
 async function commandPath(command) {
@@ -472,6 +482,16 @@ If you only want a separate browser portal without TUI/Web live sync, run /bifro
   }
 
   if (!allowManagedWeb && activeUrl) {
+    const upstreamStatus = await activeServerStatus(activeUrl, Math.min(config.startupTimeoutMs, 2000))
+    if (!upstreamStatus) {
+      return `Bifrost start failed: active OpenCode server URL is stale or unreachable: ${activeUrl}
+
+Two-way no-gap sync requires a currently reachable active upstream server. Bifrost did not start a proxy, tunnel, or separate Web server.
+
+Restart OpenCode so the plugin receives a fresh active server URL, then run /bifrost start again.
+
+If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.`
+    }
     await useActiveProxy()
   } else if (config.serverMode === "active" && !request.webMode) {
     if (!activeUrl) return "Bifrost start failed: active server mode was requested, but OpenCode did not provide an active server URL."
@@ -582,6 +602,6 @@ export async function BifrostPlugin(pluginInput, options) {
   }
 }
 
-export const __bifrostInternals = { ngrokApiUrl }
+export const __bifrostInternals = { activeServerUrl, ngrokApiUrl }
 
 export default BifrostPlugin

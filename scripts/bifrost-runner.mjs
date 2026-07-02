@@ -4,7 +4,7 @@ import BifrostPlugin from "../src/bifrost.mjs"
 const options = {}
 const args = []
 let sessionID = process.env.BIFROST_SESSION_ID || ""
-let activeServerUrl = process.env.BIFROST_ACTIVE_SERVER_URL || ""
+let activeServerUrl = ""
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i]

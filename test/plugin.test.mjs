@@ -319,6 +319,18 @@ createServer((request, response) => {
   }
 }
 
+{
+  const originalActiveServerUrl = process.env.BIFROST_ACTIVE_SERVER_URL
+  try {
+    process.env.BIFROST_ACTIVE_SERVER_URL = "http://127.0.0.1:4096"
+    assert.equal(__bifrostInternals.activeServerUrl({}), "")
+    assert.equal(__bifrostInternals.activeServerUrl({ serverUrl: new URL("http://127.0.0.1:3333/") }), "http://127.0.0.1:3333")
+  } finally {
+    if (originalActiveServerUrl === undefined) delete process.env.BIFROST_ACTIVE_SERVER_URL
+    else process.env.BIFROST_ACTIVE_SERVER_URL = originalActiveServerUrl
+  }
+}
+
 await withSessionServer([
   { id: "ses_newer", title: "Newer session", directory: "/tmp/newer", time: { updated: 30 } },
   { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
@@ -389,7 +401,8 @@ await withSessionServer([
     const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 })
     const output = { parts: [] }
     await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
-    assert.match(output.parts[0].text, /Bifrost start failed: active OpenCode server did not respond/)
+    assert.match(output.parts[0].text, /active OpenCode server URL is stale or unreachable: http:\/\/127\.0\.0\.1:9/)
+    assert.match(output.parts[0].text, /did not start a proxy, tunnel, or separate Web server/)
     await new Promise((resolve) => setTimeout(resolve, 250))
     await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
   } finally {
