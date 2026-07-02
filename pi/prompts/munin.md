@@ -34,6 +34,8 @@ Use this process:
 - Run the fixed-budget command or the nearest feasible verification.
 - Compare against the current best using the declared metric.
 - Keep improvements; revert or supersede failed changes with a clear reason. Never fabricate results.
+- This is not a single-pass run: continue the loop while there is any plausible untested hypothesis, failing/weak outcome test, or measurable path to improve the objective within the user's budget.
+- Stop only when the metric/outcome has plateaued, the next experiments are lower-value than the cost, every feasible outcome test is passing, or a concrete blocker/user budget limit prevents further evaluation.
 
 5. Research judgement
 - For skill/extension work, prefer changes that improve repeatable outcome evidence over changes that only make prompts longer.

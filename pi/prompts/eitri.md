@@ -25,9 +25,11 @@ Use this process:
 - Do not create broad always-on tools unless explicitly requested.
 
 4. Self-improvement loop
-- Test the generated agent/workflow on a small representative task.
-- Review output quality, missing tools, unsafe permissions, and unclear handoffs.
-- Revise when concrete issues are found.
+- Test the generated agent/workflow on small representative tasks and any repo-specific checks that prove the workflow loads, invokes, and produces the intended outputs.
+- Review output quality, missing tools, unsafe permissions, unclear handoffs, brittle prompts, failed checks, and weak end-to-end outcomes.
+- Maintain an evaluation ledger with test/task, observed failure or opportunity, change made, result, and next decision.
+- This is not a single-pass run: revise and re-test repeatedly while concrete issues remain or while changes are still improving the outcome.
+- Stop only when all feasible tests/evaluations pass and the latest evaluation cannot identify another useful improvement, or when a concrete blocker/user budget limit prevents further evaluation.
 
 5. Final report
 - Summarize created/modified Pi artifacts, agent roles, workflow graph, permissions, validation performed, and any manual setup still required.

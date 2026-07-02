@@ -148,11 +148,16 @@ createServer((request, response) => {
   assert.match(text, /improve bpb/)
   assert.match(text, /AgentDB MCP\/tools/)
   assert.match(text, /commands, skills, extensions, or prompts/)
+  assert.match(text, /not a single-pass run/)
+  assert.match(text, /metric\/outcome has plateaued/)
 }
 
 {
   const text = await expands(EitriPlugin, "/eitri create triage workflow", /COMPLETION_MODEL=openai\/gpt-5\.3-codex-spark/)
   assert.match(text, /create triage workflow/)
+  assert.match(text, /not a single-pass run/)
+  assert.match(text, /revise and re-test repeatedly/)
+  assert.match(text, /latest evaluation cannot identify another useful improvement/)
 }
 
 {

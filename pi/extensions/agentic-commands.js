@@ -75,6 +75,8 @@ Use this process:
 - Run the fixed-budget command or the nearest feasible verification.
 - Compare against the current best using the declared metric.
 - Keep improvements; revert or supersede failed changes with a clear reason. Never fabricate results.
+- This is not a single-pass run: continue the loop while there is any plausible untested hypothesis, failing/weak outcome test, or measurable path to improve the objective within the user's budget.
+- Stop only when the metric/outcome has plateaued, the next experiments are lower-value than the cost, every feasible outcome test is passing, or a concrete blocker/user budget limit prevents further evaluation.
 
 5. Research judgement
 - For skill/extension work, prefer changes that improve repeatable outcome evidence over changes that only make prompts longer.
@@ -112,9 +114,11 @@ Use this process:
 - Do not require upstream AutoAgent, Docker, or API-key setup for Pi-native workflows.
 
 5. Self-improvement loop
-- Test the generated agent/workflow on a small representative task.
-- Review output quality, missing tools, unsafe permissions, and unclear handoffs.
-- Revise when concrete issues are found.
+- Test the generated agent/workflow on small representative tasks and any repo-specific checks that prove the workflow loads, invokes, and produces the intended outputs.
+- Review output quality, missing tools, unsafe permissions, unclear handoffs, brittle prompts, failed checks, and weak end-to-end outcomes.
+- Maintain an evaluation ledger with test/task, observed failure or opportunity, change made, result, and next decision.
+- This is not a single-pass run: revise and re-test repeatedly while concrete issues remain or while changes are still improving the outcome.
+- Stop only when all feasible tests/evaluations pass and the latest evaluation cannot identify another useful improvement, or when a concrete blocker/user budget limit prevents further evaluation.
 
 6. Final report
 - Summarize created/modified Pi artifacts, agent roles, workflow graph, permissions, validation performed, and any manual setup still required.`,
