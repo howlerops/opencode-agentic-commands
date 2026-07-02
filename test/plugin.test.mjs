@@ -4,6 +4,7 @@ import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import AgenticCommandsPlugin, { BifrostPlugin, EitriPlugin, HuginPlugin, MuninPlugin, PolarisPlugin, SkuldPlugin, TyrPlugin, VidarPlugin } from "../src/index.mjs"
+import { __bifrostInternals } from "../src/bifrost.mjs"
 
 async function commandsFrom(plugin, options) {
   const hooks = await plugin({}, options)
@@ -22,7 +23,7 @@ async function expands(plugin, slash, expected, options) {
 
 async function withSessionServer(sessions, fn) {
   const server = createServer((request, response) => {
-    if (request.url === "/session") {
+    if (request.url?.startsWith("/session")) {
       response.setHeader("content-type", "application/json")
       response.end(JSON.stringify(sessions))
       return
@@ -296,6 +297,23 @@ createServer((request, response) => {
   }
 }
 
+{
+  const originalFetch = globalThis.fetch
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      tunnels: [
+        { public_url: "https://stale.ngrok-free.app", config: { addr: "http://127.0.0.1:65007" } },
+        { public_url: "https://fresh.ngrok-free.app", config: { addr: "http://127.0.0.1:65008" } },
+      ],
+    }), { status: 200, headers: { "content-type": "application/json" } })
+    assert.equal(await __bifrostInternals.ngrokApiUrl("http://127.0.0.1:65008"), "https://fresh.ngrok-free.app")
+    assert.equal(await __bifrostInternals.ngrokApiUrl("http://127.0.0.1:65009"), "")
+    assert.equal(await __bifrostInternals.ngrokApiUrl(""), "https://stale.ngrok-free.app")
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+}
+
 await withSessionServer([
   { id: "ses_newer", title: "Newer session", directory: "/tmp/newer", time: { updated: 30 } },
   { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
@@ -313,12 +331,14 @@ await withSessionServer([
       webPid: process.pid,
       tunnelPid: process.pid,
       tunnelProvider: "cloudflared",
+      directory: "/Users/test/project",
     })}\n`)
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
     const output = { parts: [] }
     await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "sync" }, output)
     assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
     assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
+    assert.doesNotMatch(output.parts[0].text, /Newer session/)
   } finally {
     await rm(temp, { recursive: true, force: true })
   }
@@ -342,6 +362,7 @@ await withSessionServer([
       tunnelProvider: "cloudflared",
       serverMode: "active",
       attachedToActiveServer: true,
+      directory: "/Users/test/project",
     })}\n`)
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
     const output = { parts: [] }

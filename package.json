@@ -35,6 +35,7 @@
     ]
   },
   "scripts": {
+    "e2e:bifrost": "node scripts/bifrost-e2e-smoke.mjs",
     "install:hooks": "sh scripts/hooks/install.sh",
     "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs"
   },

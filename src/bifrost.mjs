@@ -203,7 +203,9 @@ async function ngrokApiUrl(localUrl) {
     if (!response.ok) return ""
     const body = await response.json()
     const tunnels = Array.isArray(body.tunnels) ? body.tunnels : []
-    const tunnel = tunnels.find((entry) => entry.public_url && (!localUrl || entry.config?.addr === localUrl)) || tunnels.find((entry) => entry.public_url)
+    const tunnel = localUrl
+      ? tunnels.find((entry) => entry.public_url && entry.config?.addr === localUrl)
+      : tunnels.find((entry) => entry.public_url)
     return tunnel?.public_url || ""
   } catch {
     return ""
@@ -268,11 +270,17 @@ function sessionUrl(baseUrl, session) {
 async function sessionLinks(state, preferredSessionID = "", limit = 3) {
   if (!state?.localUrl) return []
   try {
-    const response = await fetch(`${trimSlash(state.localUrl)}/session`, { headers: authHeader(state) })
+    const params = new URLSearchParams()
+    if (state.directory) params.set("directory", state.directory)
+    const query = params.toString() ? `?${params}` : ""
+    let response = await fetch(`${trimSlash(state.localUrl)}/session${query}`, { headers: authHeader(state) })
+    if (!response.ok && query) response = await fetch(`${trimSlash(state.localUrl)}/session`, { headers: authHeader(state) })
     if (!response.ok) return []
     const sessions = await response.json()
     if (!Array.isArray(sessions)) return []
+    const matchingDirectory = state.directory ? sessions.filter((session) => routeDirectory(session) === state.directory) : sessions
     return sessions
+      .filter((session) => !state.directory || matchingDirectory.length === 0 || routeDirectory(session) === state.directory)
       .filter((session) => session.id && sessionPath(session))
       .sort((a, b) => {
         if (preferredSessionID && a.id === preferredSessionID) return -1
@@ -479,7 +487,7 @@ async function startBifrost(pluginInput, config, request) {
   const tunnelArgs = tunnelProvider === "ngrok" ? ["http", localUrl] : ["tunnel", "--url", localUrl]
   const tunnelPid = startProcess(tunnelCommand, tunnelArgs, {}, tunnelLog)
   const publicUrl = await waitForTunnelUrl(tunnelLog, config.startupTimeoutMs, tunnelProvider, localUrl)
-  const state = { localUrl, publicUrl, username, password, passwordSource, port, webPid, proxyPid, tunnelPid, tunnelProvider, serverMode, attachedToActiveServer, upstreamUrl, stateDir, webLog, proxyLog, tunnelLog, startedAt: new Date().toISOString() }
+  const state = { localUrl, publicUrl, username, password, passwordSource, port, webPid, proxyPid, tunnelPid, tunnelProvider, serverMode, attachedToActiveServer, upstreamUrl, directory: workspaceDirectory(pluginInput), stateDir, webLog, proxyLog, tunnelLog, startedAt: new Date().toISOString() }
   await writeState(stateDir, state)
 
   if (!publicUrl) {
@@ -500,6 +508,7 @@ Public URL: ${publicUrl}
 Server mode: ${serverMode}
 Attached to active TUI server: ${attachedToActiveServer ? "yes" : "no"}
 Active upstream URL: ${upstreamUrl || "none"}
+Directory: ${workspaceDirectory(pluginInput)}
 Username: ${username}
 Password: ${password}
 Password source: ${passwordSource}
@@ -555,5 +564,7 @@ export async function BifrostPlugin(pluginInput, options) {
     },
   }
 }
+
+export const __bifrostInternals = { ngrokApiUrl }
 
 export default BifrostPlugin
