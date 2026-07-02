@@ -27,7 +27,8 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  return `Bifrost is handled by the ${options.commandName} command hook. Return the hook output exactly and do not run shell commands.`
+  return `Return this Bifrost output exactly and do not add commentary:
+!\`node ${shellQuote(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs"))} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} --server-mode ${shellQuote(options.serverMode)} -- start\``
 }
 
 function sleep(ms) {

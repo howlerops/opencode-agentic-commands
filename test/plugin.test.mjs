@@ -227,8 +227,9 @@ createServer((request, response) => {
 
 {
   const { commands } = await commandsFrom(BifrostPlugin)
-  assert.match(commands.bifrost.template, /handled by the bifrost command hook/)
-  assert.doesNotMatch(commands.bifrost.template, /!`/)
+  assert.match(commands.bifrost.template, /^Return this Bifrost output exactly and do not add commentary:/)
+  assert.match(commands.bifrost.template, /!`node /)
+  assert.match(commands.bifrost.template, /-- start`$/)
   assert.doesNotMatch(commands.bifrost.template, /\$ARGUMENTS/)
   assert.doesNotMatch(commands.bifrost.template, /Request:/)
   assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
