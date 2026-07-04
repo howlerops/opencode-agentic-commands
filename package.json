@@ -24,6 +24,7 @@
   "files": [
     "src",
     "pi",
+    "docs/guide",
     "scripts",
     "README.md",
     "LICENSE"
@@ -39,7 +40,7 @@
   "scripts": {
     "e2e:bifrost": "node scripts/bifrost-e2e-smoke.mjs",
     "install:hooks": "sh scripts/hooks/install.sh",
-    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs && node test/install-opencode.test.mjs"
+    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs && node test/install-opencode.test.mjs && node test/install-guide.test.mjs"
   },
   "keywords": [
     "opencode",

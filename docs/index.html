@@ -298,6 +298,10 @@
         color: var(--text);
       }
 
+      .wide {
+        grid-column: 1 / -1;
+      }
+
       .panel {
         border: 1px solid var(--line);
         border-radius: 24px;
@@ -429,17 +433,21 @@
         <section id="install">
           <div class="section-head">
             <h2>Install</h2>
-            <p>Use it from a local checkout, GitHub, or npm. OpenCode requires a restart after plugin config changes.</p>
+            <p>Use the agent-assisted path for the fewest missed steps, or install directly from GitHub, npm, or a local checkout. OpenCode requires a restart after plugin config changes.</p>
           </div>
           <div class="install">
+            <div class="panel wide">
+              <h3>Agent Install</h3>
+              <pre>Install and configure opencode-agentic-commands by following the instructions here:
+https://raw.githubusercontent.com/howlerops/opencode-agentic-commands/refs/heads/main/docs/guide/installation.md</pre>
+            </div>
             <div class="panel">
               <h3>OpenCode</h3>
-              <pre>{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": [
-    ["github:howlerops/opencode-agentic-commands", {}]
-  ]
-}</pre>
+              <pre>npm install --prefix "$HOME/.config/opencode" github:howlerops/opencode-agentic-commands
+node "$HOME/.config/opencode/node_modules/opencode-agentic-commands/scripts/install-opencode.mjs"
+
+# local checkout
+node scripts/install-opencode.mjs</pre>
             </div>
             <div class="panel">
               <h3>Pi</h3>
@@ -449,7 +457,7 @@
 /polaris Ship the feature end to end</pre>
             </div>
           </div>
-          <div class="note"><strong>One package, two runtimes.</strong> This page covers both OpenCode and Pi because they install the same command suite. A separate Pi-only page is only needed if Pi later requires marketplace-specific assets or install metadata.</div>
+          <div class="note"><strong>One package, two runtimes.</strong> This page covers both OpenCode and Pi because they install the same command suite. The full raw guide is available at <a href="guide/installation.md">docs/guide/installation.md</a> for LLM agents and manual troubleshooting.</div>
         </section>
       </main>
 

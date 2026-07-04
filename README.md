@@ -74,13 +74,29 @@ Leave `model` empty to use the active OpenCode `model` value.
 
 ## Quick Start
 
-Recommended installer from a local checkout:
+Recommended agent-assisted install, matching the omo.dev-style path:
+
+```text
+Install and configure opencode-agentic-commands by following the instructions here:
+https://raw.githubusercontent.com/howlerops/opencode-agentic-commands/refs/heads/main/docs/guide/installation.md
+```
+
+The raw guide gives an LLM agent the runtime choice, prerequisite checks, deterministic install commands, verification steps, first-use tutorial, troubleshooting, and uninstall notes.
+
+Recommended OpenCode install from GitHub:
+
+```bash
+npm install --prefix "$HOME/.config/opencode" github:howlerops/opencode-agentic-commands
+node "$HOME/.config/opencode/node_modules/opencode-agentic-commands/scripts/install-opencode.mjs"
+```
+
+Installer from a local checkout:
 
 ```bash
 node scripts/install-opencode.mjs
 ```
 
-Or, after installing the package into an npm prefix:
+Or, after npm publication is available and the package is installed into an npm prefix:
 
 ```bash
 opencode-agentic-commands
@@ -93,6 +109,8 @@ The installer:
 - writes native slash command files to `~/.config/opencode/command/*.md` so OpenCode command discovery shows `/hugin`, `/tyr`, `/munin`, `/eitri`, `/vidar`, `/skuld`, `/polaris`, and `/bifrost` reliably.
 
 Restart OpenCode after running the installer.
+
+Full installation guide: [`docs/guide/installation.md`](docs/guide/installation.md).
 
 ## Manual Plugin Config
 

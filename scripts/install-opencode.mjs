@@ -11,6 +11,7 @@ const CONFIG_DIR = process.env.OPENCODE_CONFIG_DIR || path.join(homedir(), ".con
 const CONFIG_PATH = process.env.OPENCODE_CONFIG_PATH || path.join(CONFIG_DIR, "opencode.json")
 const COMMAND_DIR = process.env.OPENCODE_COMMAND_DIR || path.join(CONFIG_DIR, "command")
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+const PACKAGE_JSON = readJson(path.join(PACKAGE_ROOT, "package.json"), { version: "" })
 
 function readJson(file, fallback) {
   try {
@@ -40,12 +41,18 @@ function ensurePluginConfig() {
   writeJson(CONFIG_PATH, config)
 }
 
+function packageDependencySpec() {
+  const installedUnderNodeModules = path.basename(PACKAGE_ROOT) === PACKAGE_NAME && path.basename(path.dirname(PACKAGE_ROOT)) === "node_modules"
+  if (installedUnderNodeModules && PACKAGE_JSON.version) return PACKAGE_JSON.version
+  return `file:${PACKAGE_ROOT}`
+}
+
 function ensurePackageDependency() {
   const packagePath = path.join(CONFIG_DIR, "package.json")
   const pkg = readJson(packagePath, { dependencies: {} })
   pkg.dependencies ||= {}
   if (!pkg.dependencies[PACKAGE_NAME]) {
-    pkg.dependencies[PACKAGE_NAME] = `file:${PACKAGE_ROOT}`
+    pkg.dependencies[PACKAGE_NAME] = packageDependencySpec()
     writeJson(packagePath, pkg)
   }
 
