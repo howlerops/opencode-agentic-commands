@@ -1,7 +1,7 @@
-import { spawn, execFile } from "node:child_process"
+import { spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
-import { closeSync, openSync } from "node:fs"
-import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { closeSync, constants, openSync } from "node:fs"
+import { access, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { createServer } from "node:net"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -100,11 +100,17 @@ async function activeServerStatus(url, timeoutMs = 1500) {
 }
 
 async function commandPath(command) {
-  return new Promise((resolve) => {
-    execFile("sh", ["-lc", `command -v ${shellQuote(command)}`], (error, stdout) => {
-      resolve(error ? "" : stdout.trim().split("\n")[0])
-    })
-  })
+  for (const dir of (process.env.PATH || "").split(path.delimiter)) {
+    if (!dir) continue
+    const candidate = path.join(dir, command)
+    try {
+      await access(candidate, constants.X_OK)
+      return candidate
+    } catch {
+      // Continue searching PATH.
+    }
+  }
+  return ""
 }
 
 function pidAlive(pid) {

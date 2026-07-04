@@ -74,6 +74,28 @@ Leave `model` empty to use the active OpenCode `model` value.
 
 ## Quick Start
 
+Recommended installer from a local checkout:
+
+```bash
+node scripts/install-opencode.mjs
+```
+
+Or, after installing the package into an npm prefix:
+
+```bash
+opencode-agentic-commands
+```
+
+The installer:
+
+- updates `~/.config/opencode/opencode.json` with the plugin entry,
+- ensures `~/.config/opencode/package.json` depends on this package,
+- writes native slash command files to `~/.config/opencode/command/*.md` so OpenCode command discovery shows `/hugin`, `/tyr`, `/munin`, `/eitri`, `/vidar`, `/skuld`, `/polaris`, and `/bifrost` reliably.
+
+Restart OpenCode after running the installer.
+
+## Manual Plugin Config
+
 Install from a local checkout in `~/.config/opencode/opencode.json`:
 
 ```json
@@ -109,7 +131,7 @@ Restart OpenCode, then run:
 }
 ```
 
-OpenCode loads plugin config at startup, so quit and restart after changing plugin settings.
+OpenCode loads plugin and command config at startup, so quit and restart after changing settings. If slash commands do not appear from plugin config alone, run the installer above to materialize native command files.
 
 ## Install From npm
 

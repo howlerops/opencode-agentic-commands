@@ -224,7 +224,8 @@ createServer((request, response) => {
 }
 
 {
-  const hooks = await AgenticCommandsPlugin({ serverUrl: new URL("http://127.0.0.1:4444/") }, {})
+  const closedPort = await freePort()
+  const hooks = await AgenticCommandsPlugin({ serverUrl: new URL(`http://127.0.0.1:${closedPort}/`) }, {})
   const envOutput = { env: {} }
   await hooks["shell.env"]({ sessionID: "ses_current" }, envOutput)
   assert.equal(envOutput.env.BIFROST_SESSION_ID, "ses_current")
