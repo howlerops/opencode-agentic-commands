@@ -1,14 +1,18 @@
 {
-  "name": "opencode-agentic-commands",
+  "name": "@howlerops/valhalla",
   "version": "0.1.0",
-  "description": "OpenCode plugins and Pi extensions for agentic planning, execution, review, research, orchestration, and remote portal workflows.",
+  "description": "HowlerOps Valhalla: OpenCode plugins and Pi extensions for agentic planning, execution, review, research, orchestration, and remote portal workflows.",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.mjs",
   "bin": {
     "opencode-agentic-commands": "./scripts/install-opencode.mjs",
     "opencode-agentic-commands-install": "./scripts/install-opencode.mjs",
-    "opencode-bifrost": "./scripts/bifrost-runner.mjs"
+    "valhalla": "./scripts/install-opencode.mjs",
+    "valhalla-install": "./scripts/install-opencode.mjs",
+    "opencode-bifrost": "./scripts/bifrost-runner.mjs",
+    "heimdall": "./scripts/heimdall.mjs",
+    "opencode-heimdall": "./scripts/heimdall.mjs"
   },
   "exports": {
     ".": "./src/index.mjs",
@@ -40,7 +44,7 @@
   "scripts": {
     "e2e:bifrost": "node scripts/bifrost-e2e-smoke.mjs",
     "install:hooks": "sh scripts/hooks/install.sh",
-    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs && node test/install-opencode.test.mjs && node test/install-guide.test.mjs"
+    "test": "node test/plugin.test.mjs && node test/pi-extension.test.mjs && node test/bifrost-proxy.test.mjs && node test/heimdall.test.mjs && node test/install-opencode.test.mjs && node test/install-guide.test.mjs"
   },
   "keywords": [
     "opencode",

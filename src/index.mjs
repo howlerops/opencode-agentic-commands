@@ -144,8 +144,10 @@ export async function AgenticCommandsPlugin(input, options = {}) {
     await PolarisPlugin(input, config.polaris),
     await BifrostPlugin(input, config.bifrost),
   ]
+  const tools = Object.assign({}, ...hooksList.map((hooks) => hooks.tool || {}))
 
   return {
+    ...(Object.keys(tools).length ? { tool: tools } : {}),
     config(opencodeConfig) {
       applyModelFallbackConfig(opencodeConfig, config.modelFallback)
       applyMemoryConfig(opencodeConfig, config.memory)

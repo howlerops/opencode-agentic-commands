@@ -1,13 +1,14 @@
-import { spawn } from "node:child_process"
+import { execFile, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import { closeSync, constants, openSync } from "node:fs"
 import { access, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { createServer } from "node:net"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { addTextOutput } from "./shared.mjs"
+import { tool } from "@opencode-ai/plugin"
 
 const BIFROST_PROXY = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-proxy.mjs")
+const BIFROST_RUNNER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs")
 
 const DEFAULT_OPTIONS = {
   commandName: "bifrost",
@@ -27,8 +28,18 @@ function normalizeOptions(options = {}) {
 }
 
 function bifrostTemplate(options) {
-  return `Return this Bifrost output exactly and do not add commentary:
-!\`node ${shellQuote(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/bifrost-runner.mjs"))} --state-dir ${shellQuote(options.stateDir)} --host ${shellQuote(options.defaultHost)} --preferred-tunnel ${shellQuote(options.preferredTunnel)} --fallback-tunnel ${shellQuote(options.fallbackTunnel)} --server-mode ${shellQuote(options.serverMode)} --active-server-url "$BIFROST_PLUGIN_ACTIVE_SERVER_URL" -- start\``
+  return `Use the bifrost tool exactly once, then return the tool output exactly and do not add commentary.
+
+Request: $ARGUMENTS
+
+Parse the request this way:
+- action is one of start, status, stop, or sync; default action is start.
+- Set background=true for action=start unless the request contains foreground or --foreground.
+- Set web=true when the request contains web, fallback, --web, or --fallback.
+- Set newServer=true when the request contains new or --new.
+- If the request contains --port N, port N, or :N, set port to N.
+
+Do not use bash for Bifrost. Use the bifrost tool so it can receive the active OpenCode server context directly.`
 }
 
 function sleep(ms) {
@@ -123,14 +134,33 @@ function pidAlive(pid) {
   }
 }
 
+async function processCommand(pid) {
+  if (!pid) return ""
+  return new Promise((resolve) => {
+    execFile("ps", ["-p", String(pid), "-o", "command="], { timeout: 1000 }, (error, stdout) => {
+      resolve(error ? "" : String(stdout || "").trim())
+    })
+  })
+}
+
+async function managedPidAlive(state, key, pid) {
+  if (!pidAlive(pid)) return false
+  const command = await processCommand(pid)
+  if (!command) return false
+  const expected = state.processes?.[key]?.matches || state.processes?.[key]?.match
+  if (!expected) return false
+  const markers = Array.isArray(expected) ? expected : [expected]
+  return markers.every((marker) => command.includes(marker))
+}
+
 function localServerManagedByBifrost(state) {
   return state?.serverMode !== "active" && !state?.attachedToActiveServer
 }
 
 async function localServerAlive(state) {
   if (!state) return false
-  if (state.proxyPid && !pidAlive(state.proxyPid)) return false
-  if (localServerManagedByBifrost(state)) return pidAlive(state.webPid)
+  if (state.proxyPid && !await managedPidAlive(state, "proxy", state.proxyPid)) return false
+  if (localServerManagedByBifrost(state)) return managedPidAlive(state, "web", state.webPid)
   return Boolean(await waitForLocalServer(state.localUrl, 1500, authHeader(state)))
 }
 
@@ -179,10 +209,11 @@ async function choosePort(requested) {
   })
 }
 
-function startProcess(command, args, env, logPath) {
+function startProcess(command, args, env, logPath, cwd = undefined) {
   const log = openSync(logPath, "a")
   const child = spawn(command, args, {
     detached: true,
+    cwd,
     env: { ...process.env, ...env },
     stdio: ["ignore", log, log],
   })
@@ -329,6 +360,16 @@ Recent session URLs:
 ${recent}`
 }
 
+function attachCommand(state, preferredSessionID = "") {
+  const baseUrl = state.upstreamUrl || state.localUrl || ""
+  if (!baseUrl) return "unknown"
+  const args = ["opencode", "attach", shellQuote(baseUrl)]
+  if (state.username) args.push("--username", shellQuote(state.username))
+  if (state.password) args.push("--password", shellQuote(state.password))
+  if (preferredSessionID) args.push("--session", shellQuote(preferredSessionID))
+  return args.join(" ")
+}
+
 function formatTuiControl(state, sync = {}) {
   const baseUrl = trimSlash(state.publicUrl || state.localUrl || "")
   if (!baseUrl) return "Live TUI control API: unavailable"
@@ -343,13 +384,21 @@ Submit prompt: curl ${auth} -X POST ${shellQuote(`${baseUrl}/tui/submit-prompt`)
 Clear prompt: curl ${auth} -X POST ${shellQuote(`${baseUrl}/tui/clear-prompt`)}
 Events stream: curl ${auth} -N ${shellQuote(`${baseUrl}/event`)}
 
-Sync note: Web session URLs open session history in the browser and Web prompts are written directly to the OpenCode session. SSE events expose message text and session IDs, but not client origin, so Bifrost does not auto-forward Web prompts into /tui/submit-prompt because that would duplicate messages. The official live-control path for the active local TUI is the /tui API above.`
+Sync note: Web session URLs open session history in the browser and may require a browser refresh to show newly written messages. Web prompts are written directly to the OpenCode session. SSE events expose message text and session IDs, but not client origin, so Bifrost does not auto-forward Web prompts into /tui/submit-prompt because that would duplicate messages. The official live-control path for the active local TUI is the /tui API above.`
 }
 
 async function statusText(stateDir, state, preferredSessionID = "", sessionLinkList) {
   if (!state) return `Bifrost status: no managed portal state found.\nState directory: ${stateDir}`
   const webAlive = await localServerAlive(state)
-  const tunnelAlive = pidAlive(state.tunnelPid)
+  const tunnelAlive = await managedPidAlive(state, "tunnel", state.tunnelPid)
+  if (webAlive && tunnelAlive && !state.publicUrl) {
+    const refreshedPublicUrl = await waitForTunnelUrl(state.tunnelLog || "", 1500, state.tunnelProvider || "", state.localUrl || "")
+    if (refreshedPublicUrl) {
+      state.publicUrl = refreshedPublicUrl
+      await writeState(stateDir, state)
+    }
+  }
+  const proxyAlive = await managedPidAlive(state, "proxy", state.proxyPid)
   const username = state.username || "opencode"
   const links = sessionLinkList || (webAlive ? await sessionLinks(state, preferredSessionID) : [])
   const sync = { eventStreamAvailable: webAlive ? await eventStreamAvailable(state) : false }
@@ -369,12 +418,13 @@ Local URL: ${state.localUrl || "unknown"}
 Public URL: ${state.publicUrl || "unknown"}
 Server mode: ${state.serverMode || "web"}
 Attached to active TUI server: ${state.attachedToActiveServer ? "yes" : "no"}
+Fallback reason: ${state.fallbackReason || "none"}
 Username: ${username}
 Password: ${state.password || "unknown"}
 Password source: ${state.passwordSource || "unknown"}
-Attach: ${state.upstreamUrl ? `opencode attach ${state.upstreamUrl}` : state.localUrl ? `opencode attach ${state.localUrl}` : "unknown"}
+Attach current session: ${attachCommand(state, preferredSessionID)}
 Web PID: ${state.webPid || "none"} (${localServerManagedByBifrost(state) ? (webAlive ? "running" : "not running") : "active server is not Bifrost-managed"})
-Proxy PID: ${state.proxyPid || "none"} (${state.proxyPid ? (pidAlive(state.proxyPid) ? "running" : "not running") : "not used"})
+Proxy PID: ${state.proxyPid || "none"} (${state.proxyPid ? (proxyAlive ? "running" : "not running") : "not used"})
 Tunnel PID: ${state.tunnelPid || "unknown"} (${tunnelAlive ? "running" : "not running"})
 Tunnel provider: ${state.tunnelProvider || "unknown"}
 State: ${path.join(stateDir, "state.json")}
@@ -389,15 +439,19 @@ async function stopBifrost(stateDir) {
   const state = await readState(stateDir)
   if (!state) return `Bifrost stop: no managed portal state found.\nState directory: ${stateDir}`
   const stopped = []
-  for (const [label, pid] of [["tunnel", state.tunnelPid], ["Bifrost proxy", state.proxyPid], ["OpenCode Web", state.webPid]]) {
+  for (const [key, label, pid] of [["tunnel", "tunnel", state.tunnelPid], ["proxy", "Bifrost proxy", state.proxyPid], ["web", "OpenCode Web", state.webPid]]) {
     if (!pid) continue
     if (label === "OpenCode Web" && !localServerManagedByBifrost(state)) continue
-    if (!pidAlive(pid)) {
+    if (!await managedPidAlive(state, key, pid)) {
       stopped.push(`${label} PID ${pid}: already stopped`)
       continue
     }
-    process.kill(Number(pid), "SIGTERM")
-    stopped.push(`${label} PID ${pid}: stopped`)
+    try {
+      process.kill(Number(pid), "SIGTERM")
+      stopped.push(`${label} PID ${pid}: stopped`)
+    } catch {
+      stopped.push(`${label} PID ${pid}: already stopped`)
+    }
   }
   await rm(path.join(stateDir, "state.json"), { force: true })
   return `Bifrost stop complete.\n${stopped.join("\n") || "No PIDs were recorded."}\nState removed: ${path.join(stateDir, "state.json")}`
@@ -406,11 +460,12 @@ async function stopBifrost(stateDir) {
 async function startBifrost(pluginInput, config, request) {
   const stateDir = resolveStateDir(pluginInput, config)
   const existing = await readState(stateDir)
-  if (existing && !request.newServer && await localServerAlive(existing) && pidAlive(existing.tunnelPid)) {
+  if (existing && !request.newServer && await localServerAlive(existing) && await managedPidAlive(existing, "tunnel", existing.tunnelPid)) {
     const links = await sessionLinks(existing, request.sessionID)
     const opened = await openUrl(links[0]?.url)
     return `${await statusText(stateDir, existing, request.sessionID, links)}\nOpened session URL: ${opened ? links[0].url : "not opened"}`
   }
+  if (existing) await stopBifrost(stateDir)
 
   await mkdir(stateDir, { recursive: true })
   const preferred = await commandPath(config.preferredTunnel)
@@ -432,6 +487,7 @@ async function startBifrost(pluginInput, config, request) {
   let attachedToActiveServer = false
   let upstreamUrl = ""
   const activeUrl = activeServerUrl(pluginInput)
+  let fallbackReason = ""
 
   async function useActiveProxy() {
     const node = process.execPath
@@ -474,33 +530,35 @@ async function startBifrost(pluginInput, config, request) {
 
   const allowManagedWeb = config.serverMode === "web" || request.webMode
   if (!activeUrl && !allowManagedWeb) {
-    return `Bifrost start failed: no active OpenCode server URL was available, so Bifrost did not start a separate Web server.
-
-Two-way no-gap sync requires active mode, which should show:
-Server mode: active
-Attached to active TUI server: yes
-Web PID: none
-
-If you are in the OpenCode TUI, quit and restart OpenCode so the latest plugin can receive the active server URL, then run /bifrost start again.
+    if (config.serverMode === "active") {
+      return `Bifrost start failed: active server mode was requested, but no active OpenCode server URL was available.
 
 If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.`
+    }
+    fallbackReason = "no active OpenCode server URL was available"
   }
 
   if (!allowManagedWeb && activeUrl) {
     const upstreamStatus = await activeServerStatus(activeUrl, Math.min(config.startupTimeoutMs, 2000))
     if (!upstreamStatus) {
-      return `Bifrost start failed: active OpenCode server URL is stale or unreachable: ${activeUrl}
+      if (config.serverMode === "active") {
+        return `Bifrost start failed: active OpenCode server URL is stale or unreachable: ${activeUrl}
 
 Two-way no-gap sync requires a currently reachable active upstream server. Bifrost did not start a proxy, tunnel, or separate Web server.
 
 Restart OpenCode so the plugin receives a fresh active server URL, then run /bifrost start again.
 
 If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.`
+      }
+      fallbackReason = `active OpenCode server URL is stale or unreachable: ${activeUrl}`
+    } else {
+      await useActiveProxy()
     }
-    await useActiveProxy()
   } else if (config.serverMode === "active" && !request.webMode) {
     if (!activeUrl) return "Bifrost start failed: active server mode was requested, but OpenCode did not provide an active server URL."
-  } else {
+  }
+
+  if (!localUrl) {
     const error = await useManagedWeb()
     if (error) return error
   }
@@ -520,6 +578,7 @@ If you only want a separate browser portal without TUI/Web live sync, run /bifro
         return `Bifrost start failed: OpenCode server did not respond at ${localUrl}.${webLog ? `\nWeb log: ${webLog}` : ""}`
       }
     } else {
+      if (serverMode === "web") return `Bifrost start failed: OpenCode Web server did not respond at ${localUrl}.${webLog ? `\nWeb log: ${webLog}` : ""}`
       return `Bifrost start failed: active OpenCode server did not respond at ${localUrl}, so Bifrost did not fall back to a separate Web server.
 
 Two-way no-gap sync requires an active upstream server. If you only want a separate browser portal without TUI/Web live sync, run /bifrost start web.${webLog ? `\nWeb log: ${webLog}` : ""}${proxyLog ? `\nProxy log: ${proxyLog}` : ""}`
@@ -529,7 +588,7 @@ Two-way no-gap sync requires an active upstream server. If you only want a separ
   const tunnelArgs = tunnelProvider === "ngrok" ? ["http", localUrl] : ["tunnel", "--url", localUrl]
   const tunnelPid = startProcess(tunnelCommand, tunnelArgs, {}, tunnelLog)
   const publicUrl = await waitForTunnelUrl(tunnelLog, config.startupTimeoutMs, tunnelProvider, localUrl)
-  const state = { localUrl, publicUrl, username, password, passwordSource, port, webPid, proxyPid, tunnelPid, tunnelProvider, serverMode, attachedToActiveServer, upstreamUrl, directory: workspaceDirectory(pluginInput), stateDir, webLog, proxyLog, tunnelLog, startedAt: new Date().toISOString() }
+  const state = { localUrl, publicUrl, username, password, passwordSource, port, webPid, proxyPid, tunnelPid, tunnelProvider, serverMode, attachedToActiveServer, upstreamUrl, fallbackReason, directory: workspaceDirectory(pluginInput), stateDir, webLog, proxyLog, tunnelLog, processes: { web: { pid: webPid, matches: ["opencode", "web", "--port", String(port)] }, proxy: { pid: proxyPid, matches: [path.basename(BIFROST_PROXY), "--listen-port", String(port)] }, tunnel: { pid: tunnelPid, matches: [tunnelProvider, localUrl] } }, startedAt: new Date().toISOString() }
   await writeState(stateDir, state)
 
   if (!publicUrl) {
@@ -545,6 +604,7 @@ Check tunnel log: ${tunnelLog}`
 
   return `Bifrost portal started.
 
+${fallbackReason ? `Fallback note: ${fallbackReason}; started managed Web mode instead.\n` : ""}
 Local URL: ${localUrl}
 Public URL: ${publicUrl}
 Server mode: ${serverMode}
@@ -560,7 +620,7 @@ ${formatSessionLinks(links)}
 
 Opened session URL: ${opened ? links[0].url : "not opened"}
 
-Attach: opencode attach ${upstreamUrl || localUrl}
+Attach current session: ${attachCommand(state, request.sessionID)}
 Status: /bifrost status
 Stop: /bifrost stop
 Web PID: ${webPid || "none"}
@@ -573,7 +633,8 @@ Proxy log: ${proxyLog || "none"}
 Tunnel log: ${tunnelLog}`
 }
 
-async function runBifrost(pluginInput, config, args, sessionID = "") {
+export async function runBifrost(pluginInput, options, args, sessionID = "") {
+  const config = normalizeOptions(options)
   const request = parseRequest(args)
   request.sessionID = sessionID
   const { stateDir, state } = await findState(pluginInput, config)
@@ -582,11 +643,75 @@ async function runBifrost(pluginInput, config, args, sessionID = "") {
   return startBifrost(pluginInput, config, request)
 }
 
+function runnerArgs(config, actionArgs, sessionID, activeUrl) {
+  return [
+    BIFROST_RUNNER,
+    "--state-dir", config.stateDir,
+    "--host", config.defaultHost,
+    "--preferred-tunnel", config.preferredTunnel,
+    "--fallback-tunnel", config.fallbackTunnel,
+    "--server-mode", config.serverMode,
+    "--active-server-url", activeUrl || "",
+    "--session-id", sessionID || "",
+    "--",
+    ...actionArgs,
+  ]
+}
+
+function toolActionArgs(args) {
+  const action = args.action || "start"
+  const actionArgs = [action]
+  if (args.port) actionArgs.push("port", String(args.port))
+  if (args.web) actionArgs.push("web")
+  if (args.newServer) actionArgs.push("--new")
+  return actionArgs
+}
+
+function createBifrostTool(pluginInput, config) {
+  return tool({
+    description: "Start, inspect, or stop Bifrost, a secure remote portal to the active OpenCode server. Use background=true for non-blocking startup.",
+    args: {
+      action: tool.schema.enum(["start", "status", "stop", "sync"]).optional().describe("Bifrost action to run. Defaults to start."),
+      background: tool.schema.boolean().optional().describe("For start only, detach startup and return immediately with log/state paths."),
+      port: tool.schema.number().int().min(1).max(65535).optional().describe("Optional local port to request."),
+      web: tool.schema.boolean().optional().describe("Start a separate OpenCode Web portal instead of requiring the active TUI server."),
+      newServer: tool.schema.boolean().optional().describe("Ignore a running Bifrost state and start a new server/tunnel."),
+    },
+    async execute(args, context) {
+      const action = args.action || "start"
+      const directory = context.directory || context.worktree || workspaceDirectory(pluginInput)
+      const toolInput = { ...pluginInput, directory }
+      const actionArgs = toolActionArgs({ ...args, action })
+
+      if (action === "start" && args.background) {
+        const stateDir = resolveStateDir(toolInput, config)
+        await mkdir(stateDir, { recursive: true, mode: 0o700 })
+        await chmod(stateDir, 0o700).catch(() => {})
+        const runnerLog = path.join(stateDir, "bifrost-runner.log")
+        const activeUrl = activeServerUrl(pluginInput)
+        const pid = startProcess(process.execPath, runnerArgs(config, actionArgs, context.sessionID || "", activeUrl), {}, runnerLog, directory)
+        return `Bifrost start launched in background.
+
+Runner PID: ${pid}
+Runner log: ${runnerLog}
+State directory: ${stateDir}
+
+Check progress with the bifrost tool action=status or /bifrost status.`
+      }
+
+      return runBifrost(toolInput, config, actionArgs.join(" "), context.sessionID || "")
+    },
+  })
+}
+
 export async function BifrostPlugin(pluginInput, options) {
   const config = normalizeOptions(options)
   const template = bifrostTemplate(config)
 
   return {
+    tool: {
+      bifrost: createBifrostTool(pluginInput, config),
+    },
     config(opencodeConfig) {
       opencodeConfig.command ||= {}
       opencodeConfig.command[config.commandName] = {
@@ -594,10 +719,6 @@ export async function BifrostPlugin(pluginInput, options) {
         agent: config.agent,
         template,
       }
-    },
-    "command.execute.before": async (input, output) => {
-      if (input.command !== config.commandName) return
-      addTextOutput(output, await runBifrost(pluginInput, config, input.arguments || "", input.sessionID || ""))
     },
     "shell.env": async (input, output) => {
       if (input.sessionID) output.env.BIFROST_SESSION_ID = input.sessionID
@@ -607,6 +728,6 @@ export async function BifrostPlugin(pluginInput, options) {
   }
 }
 
-export const __bifrostInternals = { activeServerUrl, ngrokApiUrl }
+export const __bifrostInternals = { activeServerUrl, ngrokApiUrl, runBifrost }
 
 export default BifrostPlugin

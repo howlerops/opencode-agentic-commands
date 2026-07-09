@@ -1,0 +1,48 @@
+{
+  "localUrl": "http://127.0.0.1:63726",
+  "publicUrl": "https://2a64-2600-8800-e91-9700-c56f-e119-cadf-4fc9.ngrok-free.app",
+  "username": "opencode",
+  "password": "bifrost-8XT5GpkCTXMl6UrMEY2OmPKf",
+  "passwordSource": "generated temporary password",
+  "port": 63726,
+  "webPid": 16457,
+  "proxyPid": null,
+  "tunnelPid": 16480,
+  "tunnelProvider": "ngrok",
+  "serverMode": "web",
+  "attachedToActiveServer": false,
+  "upstreamUrl": "",
+  "fallbackReason": "no active OpenCode server URL was available",
+  "directory": "/Users/jacob_1/opencode-agentic-commands",
+  "stateDir": "/Users/jacob_1/opencode-agentic-commands/.opencode/bifrost",
+  "webLog": "/Users/jacob_1/opencode-agentic-commands/.opencode/bifrost/opencode-web.log",
+  "proxyLog": "",
+  "tunnelLog": "/Users/jacob_1/opencode-agentic-commands/.opencode/bifrost/ngrok.log",
+  "processes": {
+    "web": {
+      "pid": 16457,
+      "matches": [
+        "opencode",
+        "web",
+        "--port",
+        "63726"
+      ]
+    },
+    "proxy": {
+      "pid": null,
+      "matches": [
+        "bifrost-proxy.mjs",
+        "--listen-port",
+        "63726"
+      ]
+    },
+    "tunnel": {
+      "pid": 16480,
+      "matches": [
+        "ngrok",
+        "http://127.0.0.1:63726"
+      ]
+    }
+  },
+  "startedAt": "2026-07-09T13:59:07.302Z"
+}

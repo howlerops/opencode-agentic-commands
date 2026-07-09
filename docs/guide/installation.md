@@ -1,21 +1,21 @@
 # Installation
 
-This guide is written for LLM agents helping a user install `opencode-agentic-commands` for OpenCode and Pi. Use the deterministic checks and commands below instead of guessing from the website summary.
+This guide is written for LLM agents helping a user install HowlerOps Valhalla (`@howlerops/valhalla`) for OpenCode and Pi. Use the deterministic checks and commands below instead of guessing from the website summary.
 
 If you are an LLM agent, fetch this file as raw text when possible:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/howlerops/opencode-agentic-commands/refs/heads/main/docs/guide/installation.md
+curl -fsSL https://raw.githubusercontent.com/howlerops/valhalla/refs/heads/main/docs/guide/installation.md
 ```
 
 ## What This Package Installs
 
-`opencode-agentic-commands` ships one command suite for two runtimes:
+HowlerOps Valhalla ships one command suite for two runtimes:
 
 | Runtime | Install path | Lands on disk |
 | --- | --- | --- |
 | OpenCode | Install the GitHub package into `~/.config/opencode`, then run its installer | `~/.config/opencode/opencode.json`, `~/.config/opencode/package.json`, `~/.config/opencode/command/*.md` |
-| Pi | `pi install git:github.com/howlerops/opencode-agentic-commands` | Pi package extension and prompt templates |
+| Pi | `pi install git:github.com/howlerops/valhalla` | Pi package extension and prompt templates |
 | Both | Run both installers | Same command names in both runtimes |
 
 The command suite is `/hugin`, `/tyr`, `/munin`, `/eitri`, `/vidar`, `/skuld`, `/polaris`, and `/bifrost`.
@@ -25,21 +25,21 @@ The command suite is `/hugin`, `/tyr`, `/munin`, `/eitri`, `/vidar`, `/skuld`, `
 Recommended: paste this prompt into an LLM agent session:
 
 ```text
-Install and configure opencode-agentic-commands by following the instructions here:
-https://raw.githubusercontent.com/howlerops/opencode-agentic-commands/refs/heads/main/docs/guide/installation.md
+Install and configure HowlerOps Valhalla by following the instructions here:
+https://raw.githubusercontent.com/howlerops/valhalla/refs/heads/main/docs/guide/installation.md
 ```
 
 Direct OpenCode install from GitHub:
 
 ```bash
-npm install --prefix "$HOME/.config/opencode" github:howlerops/opencode-agentic-commands
-node "$HOME/.config/opencode/node_modules/opencode-agentic-commands/scripts/install-opencode.mjs"
+npm install --prefix "$HOME/.config/opencode" github:howlerops/valhalla
+node "$HOME/.config/opencode/node_modules/@howlerops/valhalla/scripts/install-opencode.mjs"
 ```
 
 Direct Pi install:
 
 ```bash
-pi install git:github.com/howlerops/opencode-agentic-commands
+pi install git:github.com/howlerops/valhalla
 ```
 
 Restart OpenCode after installing or changing plugin config so slash-command discovery reloads.
@@ -53,7 +53,7 @@ Follow these steps in order. Ask one concise question only if the user did not s
 Ask which runtime to install for when unknown:
 
 ```text
-Which runtime do you want to install opencode-agentic-commands for? Pick one:
+Which runtime do you want to install HowlerOps Valhalla for? Pick one:
 1. OpenCode
 2. Pi
 3. Both
@@ -90,8 +90,8 @@ If a required runtime is missing, report that prerequisite. Do not install unrel
 Use the GitHub package installer:
 
 ```bash
-npm install --prefix "$HOME/.config/opencode" github:howlerops/opencode-agentic-commands
-node "$HOME/.config/opencode/node_modules/opencode-agentic-commands/scripts/install-opencode.mjs"
+npm install --prefix "$HOME/.config/opencode" github:howlerops/valhalla
+node "$HOME/.config/opencode/node_modules/@howlerops/valhalla/scripts/install-opencode.mjs"
 ```
 
 From a local checkout, run:
@@ -103,12 +103,12 @@ node scripts/install-opencode.mjs
 After npm publication is available in the user environment, this shorter form is also valid:
 
 ```bash
-npx opencode-agentic-commands@latest
+npx @howlerops/valhalla@latest
 ```
 
 The installer is idempotent. It:
 
-- ensures `~/.config/opencode/opencode.json` contains the `opencode-agentic-commands` plugin entry,
+- ensures `~/.config/opencode/opencode.json` contains the `@howlerops/valhalla` plugin entry,
 - ensures `~/.config/opencode/package.json` depends on this package,
 - runs `npm install --prefix ~/.config/opencode` when the package is not installed there,
 - writes native slash command markdown files under `~/.config/opencode/command/`.
@@ -118,19 +118,19 @@ The installer is idempotent. It:
 Use the GitHub package reference:
 
 ```bash
-pi install git:github.com/howlerops/opencode-agentic-commands
+pi install git:github.com/howlerops/valhalla
 ```
 
 From a local checkout, run:
 
 ```bash
-pi install /absolute/path/to/opencode-agentic-commands
+pi install /absolute/path/to/valhalla
 ```
 
 After npm publication is available in the user environment, this form is also valid:
 
 ```bash
-pi install npm:opencode-agentic-commands
+pi install npm:@howlerops/valhalla
 ```
 
 ### Step 4: Verify OpenCode
@@ -138,7 +138,7 @@ pi install npm:opencode-agentic-commands
 Check the plugin entry and command files:
 
 ```bash
-node -e 'const fs=require("fs"), os=require("os"), path=require("path"); const root=path.join(os.homedir(),".config","opencode"); const cfg=JSON.parse(fs.readFileSync(path.join(root,"opencode.json"),"utf8")); const has=(cfg.plugin||[]).some((entry)=>entry==="opencode-agentic-commands" || (Array.isArray(entry) && entry[0]==="opencode-agentic-commands")); if(!has) throw new Error("missing opencode-agentic-commands plugin"); for (const name of ["hugin","tyr","munin","eitri","vidar","skuld","polaris","bifrost"]) fs.accessSync(path.join(root,"command",`${name}.md`)); console.log("OpenCode commands installed")'
+node -e 'const fs=require("fs"), os=require("os"), path=require("path"); const root=path.join(os.homedir(),".config","opencode"); const cfg=JSON.parse(fs.readFileSync(path.join(root,"opencode.json"),"utf8")); const has=(cfg.plugin||[]).some((entry)=>entry==="@howlerops/valhalla" || (Array.isArray(entry) && entry[0]==="@howlerops/valhalla")); if(!has) throw new Error("missing @howlerops/valhalla plugin"); for (const name of ["hugin","tyr","munin","eitri","vidar","skuld","polaris","bifrost"]) fs.accessSync(path.join(root,"command",`${name}.md`)); console.log("OpenCode commands installed")'
 ```
 
 Then restart OpenCode and confirm slash commands are available in the TUI:
@@ -181,15 +181,15 @@ After verification, tell the user:
 | --- | --- |
 | OpenCode slash commands do not appear | Restart OpenCode. If still missing, rerun the GitHub package install and installer commands above to materialize native command files. |
 | `npm install --prefix ~/.config/opencode` fails | Check npm/network output, then rerun the installer. The installer is idempotent. |
-| Local checkout install writes `file:` dependency | Expected for `node scripts/install-opencode.mjs`; use `npx opencode-agentic-commands@latest` for package installs. |
-| Pi command is missing | Re-run `pi install git:github.com/howlerops/opencode-agentic-commands` and restart the Pi session if required. |
-| `/bifrost start` does not create a portal | It requires an active OpenCode server by default. Use `/bifrost start web` only when the user explicitly wants a separate browser portal. |
+| Local checkout install writes `file:` dependency | Expected for `node scripts/install-opencode.mjs`; use `npx @howlerops/valhalla@latest` for package installs. |
+| Pi command is missing | Re-run `pi install git:github.com/howlerops/valhalla` and restart the Pi session if required. |
+| `/bifrost start` does not attach to the active TUI | Default `auto` mode falls back to a managed Web portal when active-server context is missing or stale, and reports the fallback reason. Configure Bifrost with `serverMode: "active"` when missing/stale active context should fail instead. |
 
 ## Uninstall
 
 OpenCode removal is manual:
 
-1. Remove the `opencode-agentic-commands` entry from `~/.config/opencode/opencode.json`.
+1. Remove the `@howlerops/valhalla` entry from `~/.config/opencode/opencode.json`.
 2. Remove generated command files from `~/.config/opencode/command/` if desired.
 3. Remove the dependency from `~/.config/opencode/package.json` and run `npm install --prefix ~/.config/opencode`.
 

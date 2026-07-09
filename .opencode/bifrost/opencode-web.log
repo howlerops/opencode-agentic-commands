@@ -1,0 +1,40 @@
+[0m
+  ⠀                                ▄     
+  █▀▀█ █▀▀█ █▀▀█ █▀▀▄ █▀▀▀ █▀▀█ █▀▀█ █▀▀█
+  █  █ █  █ █▀▀▀ █  █ █    █  █ █  █ █▀▀▀
+  ▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀
+[0m
+[94m[1m  Web interface:     [0m http://127.0.0.1:63726/
+MaxListenersExceededWarning: Possible EventTarget memory leak detected. 11 event listeners added to [yZ]. MaxListeners is undefined. Use events.setMaxListeners() to increase limit
+ emitter: yZ {
+  _events: [Object ...],
+  _eventsCount: 1,
+  _maxListeners: undefined,
+  [Symbol(kCapture)]: false,
+  emit: [Function: emit],
+  setMaxListeners: [Function: setMaxListeners],
+  getMaxListeners: [Function: getMaxListeners],
+  addListener: [Function: addListener],
+  on: [Function: addListener],
+  prependListener: [Function: prependListener],
+  once: [Function: once],
+  prependOnceListener: [Function: prependOnceListener],
+  removeListener: [Function: removeListener],
+  off: [Function: removeListener],
+  removeAllListeners: [Function: removeAllListeners],
+  listeners: [Function: listeners],
+  rawListeners: [Function: rawListeners],
+  listenerCount: [Function: listenerCount],
+  eventNames: [Function: eventNames],
+},
+    type: "event",
+   count: 11,
+
+      at overflowWarning (node:events:185:19)
+      at addListener (node:events:158:22)
+      at ~effect/Effect/evaluate (/$bunfs/root/chunk-xvx3wx9t.js:25:4492)
+      at runLoop (/$bunfs/root/chunk-xvx3wx9t.js:25:2045)
+      at evaluate (/$bunfs/root/chunk-xvx3wx9t.js:25:1435)
+      at runTasks (/$bunfs/root/chunk-xvx3wx9t.js:11:12750)
+      at afterScheduled (/$bunfs/root/chunk-xvx3wx9t.js:11:12637)
+

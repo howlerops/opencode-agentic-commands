@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { spawn } from "node:child_process"
 import { chmod, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
 import { tmpdir } from "node:os"
@@ -209,6 +210,7 @@ createServer((request, response) => {
   const { hooks } = await commandsFrom(BifrostPlugin)
   const output = { parts: [{ type: "text", text: "/bifrost start port 4141" }] }
   assert.equal(hooks["chat.message"], undefined)
+  assert.equal(hooks["command.execute.before"], undefined)
   assert.equal(output.parts[0].text, "/bifrost start port 4141")
   const envOutput = { env: {} }
   await hooks["shell.env"]({ sessionID: "ses_current" }, envOutput)
@@ -234,23 +236,56 @@ createServer((request, response) => {
 
 {
   const { commands } = await commandsFrom(BifrostPlugin, {})
-  assert.match(commands.bifrost.template, /^Return this Bifrost output exactly and do not add commentary:/)
-  assert.match(commands.bifrost.template, /!`node /)
-  assert.match(commands.bifrost.template, /--active-server-url "\$BIFROST_PLUGIN_ACTIVE_SERVER_URL"/)
-  assert.match(commands.bifrost.template, /-- start`$/)
-  assert.doesNotMatch(commands.bifrost.template, /\$ARGUMENTS/)
+  assert.match(commands.bifrost.template, /^Use the bifrost tool exactly once/)
+  assert.match(commands.bifrost.template, /Request: \$ARGUMENTS/)
+  assert.match(commands.bifrost.template, /Set background=true for action=start/)
+  assert.match(commands.bifrost.template, /Do not use bash for Bifrost/)
+  assert.doesNotMatch(commands.bifrost.template, /!`node /)
+  assert.doesNotMatch(commands.bifrost.template, /BIFROST_PLUGIN_ACTIVE_SERVER_URL/)
   assert.doesNotMatch(commands.bifrost.template, /BIFROST_ACTIVE_SERVER_URL/)
-  assert.doesNotMatch(commands.bifrost.template, /Request:/)
   assert.doesNotMatch(commands.bifrost.template, /If opencode-bifrost/)
+}
+
+{
+  const hooks = await AgenticCommandsPlugin({}, {})
+  assert.equal(typeof hooks.tool.bifrost.execute, "function")
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-tool-status-test-"))
+  try {
+    const hooks = await BifrostPlugin({}, { stateDir: ".bifrost" })
+    const text = await hooks.tool.bifrost.execute({ action: "status" }, { directory: temp, worktree: temp, sessionID: "ses_tool" })
+    assert.match(text, /Bifrost status: no managed portal state found/)
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-tool-background-test-"))
+  try {
+    const hooks = await BifrostPlugin({}, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 })
+    const text = await hooks.tool.bifrost.execute({ action: "start", background: true }, { directory: temp, worktree: temp, sessionID: "ses_tool" })
+    assert.match(text, /Bifrost start launched in background/)
+    assert.match(text, /Runner PID: \d+/)
+    assert.match(text, /bifrost-runner\.log/)
+    assert.match(text, /State directory: /)
+    const pid = Number(text.match(/Runner PID: (\d+)/)?.[1])
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    assert.throws(() => process.kill(pid, 0))
+  } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
 }
 
 {
   const hooks = await BifrostPlugin({ serverUrl: new URL("http://127.0.0.1:3333/") }, {})
   const config = {}
   await hooks.config(config)
-  assert.match(config.command.bifrost.template, /--active-server-url "\$BIFROST_PLUGIN_ACTIVE_SERVER_URL"/)
+  assert.match(config.command.bifrost.template, /Use the bifrost tool exactly once/)
   assert.doesNotMatch(config.command.bifrost.template, /127\.0\.0\.1:3333/)
-  assert.doesNotMatch(config.command.bifrost.template, /\$ARGUMENTS/)
+  assert.match(config.command.bifrost.template, /\$ARGUMENTS/)
 }
 
 await withSessionServer([], async (localUrl) => {
@@ -265,10 +300,9 @@ await withSessionServer([], async (localUrl) => {
   const temp = await mkdtemp(path.join(tmpdir(), "bifrost-test-"))
   try {
     const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "status" }, output)
-    assert.match(output.parts[0].text, /Bifrost status: no managed portal state found/)
-    assert.doesNotMatch(output.parts[0].text, /Start workflow:/)
+    const text = await hooks.tool.bifrost.execute({ action: "status" }, { directory: temp, worktree: temp, sessionID: "" })
+    assert.match(text, /Bifrost status: no managed portal state found/)
+    assert.doesNotMatch(text, /Start workflow:/)
   } finally {
     await rm(temp, { recursive: true, force: true })
   }
@@ -294,20 +328,18 @@ await withSessionServer([], async (localUrl) => {
       tunnelProvider: "cloudflared",
     })}\n`)
     process.env.HOME = home
-    const hooks = await BifrostPlugin({ directory: project }, { stateDir: ".bifrost" })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "status" }, output)
-    assert.match(output.parts[0].text, /Open: https:\/\/example\.trycloudflare\.com/)
-    assert.match(output.parts[0].text, /Username: opencode/)
-    assert.match(output.parts[0].text, /Password: bifrost-test-password/)
-    assert.match(output.parts[0].text, /Copy login: url=https:\/\/example\.trycloudflare\.com username=opencode password=bifrost-test-password/)
-    assert.match(output.parts[0].text, /Session links: unavailable/)
-    assert.match(output.parts[0].text, /Live TUI control API:/)
-    assert.match(output.parts[0].text, /Event stream status: unavailable/)
-    assert.match(output.parts[0].text, /\/tui\/append-prompt/)
-    assert.match(output.parts[0].text, /\/tui\/submit-prompt/)
-    assert.match(output.parts[0].text, /\/event/)
-    assert.match(output.parts[0].text, /Bifrost does not auto-forward Web prompts/)
+    const text = await __bifrostInternals.runBifrost({ directory: project }, { stateDir: ".bifrost" }, "status")
+    assert.match(text, /Open: https:\/\/example\.trycloudflare\.com/)
+    assert.match(text, /Username: opencode/)
+    assert.match(text, /Password: bifrost-test-password/)
+    assert.match(text, /Copy login: url=https:\/\/example\.trycloudflare\.com username=opencode password=bifrost-test-password/)
+    assert.match(text, /Session links: unavailable/)
+    assert.match(text, /Live TUI control API:/)
+    assert.match(text, /Event stream status: unavailable/)
+    assert.match(text, /\/tui\/append-prompt/)
+    assert.match(text, /\/tui\/submit-prompt/)
+    assert.match(text, /\/event/)
+    assert.match(text, /Bifrost does not auto-forward Web prompts/)
   } finally {
     process.env.HOME = originalHome
     await rm(temp, { recursive: true, force: true })
@@ -360,15 +392,54 @@ await withSessionServer([
       webPid: process.pid,
       tunnelPid: process.pid,
       tunnelProvider: "cloudflared",
+      processes: { web: { pid: process.pid, match: "plugin.test.mjs" }, tunnel: { pid: process.pid, match: "plugin.test.mjs" } },
       directory: "/Users/test/project",
     })}\n`)
-    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "sync" }, output)
-    assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
-    assert.match(output.parts[0].text, /1\. \[current\] Current local session/)
-    assert.doesNotMatch(output.parts[0].text, /Newer session/)
+    const text = await __bifrostInternals.runBifrost({ directory: temp }, { stateDir: ".bifrost" }, "sync", "ses_current")
+    assert.match(text, /Web session history URL \(Current TUI session\): https:\/\/example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
+    assert.match(text, /1\. \[current\] Current local session/)
+    assert.match(text, /Attach current session: opencode attach 'http:\/\/127\.0\.0\.1:\d+' --username 'opencode' --password 'bifrost-test-password' --session 'ses_current'/)
+    assert.doesNotMatch(text, /Newer session/)
   } finally {
+    await rm(temp, { recursive: true, force: true })
+  }
+})
+
+await withSessionServer([
+  { id: "ses_current", title: "Current local session", directory: "/Users/test/project", time: { updated: 10 } },
+], async (localUrl) => {
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-public-url-refresh-test-"))
+  const originalFetch = globalThis.fetch
+  try {
+    globalThis.fetch = async (url, options) => {
+      if (String(url) === "http://127.0.0.1:4040/api/tunnels") {
+        return new Response(JSON.stringify({
+          tunnels: [{ public_url: "https://fresh.ngrok-free.app", config: { addr: localUrl } }],
+        }), { status: 200, headers: { "content-type": "application/json" } })
+      }
+      return originalFetch(url, options)
+    }
+    const stateDir = path.join(temp, ".bifrost")
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl,
+      publicUrl: "",
+      username: "opencode",
+      password: "bifrost-test-password",
+      passwordSource: "generated temporary password",
+      webPid: process.pid,
+      tunnelPid: process.pid,
+      tunnelProvider: "ngrok",
+      tunnelLog: path.join(stateDir, "ngrok.log"),
+      directory: "/Users/test/project",
+      processes: { web: { pid: process.pid, match: "plugin.test.mjs" }, tunnel: { pid: process.pid, match: "plugin.test.mjs" } },
+    })}\n`)
+    const text = await __bifrostInternals.runBifrost({ directory: temp }, { stateDir: ".bifrost" }, "status", "ses_current")
+    assert.match(text, /Open: https:\/\/fresh\.ngrok-free\.app/)
+    assert.match(text, /Public URL: https:\/\/fresh\.ngrok-free\.app/)
+    assert.match(text, /may require a browser refresh/)
+  } finally {
+    globalThis.fetch = originalFetch
     await rm(temp, { recursive: true, force: true })
   }
 })
@@ -393,14 +464,12 @@ await withSessionServer([
       attachedToActiveServer: true,
       directory: "/Users/test/project",
     })}\n`)
-    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost" })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", sessionID: "ses_current", arguments: "status" }, output)
-    assert.match(output.parts[0].text, /Server mode: active/)
-    assert.match(output.parts[0].text, /Attached to active TUI server: yes/)
-    assert.match(output.parts[0].text, /Web PID: none \(active server is not Bifrost-managed\)/)
-    assert.match(output.parts[0].text, /Password source: OPENCODE_SERVER_PASSWORD from active OpenCode server/)
-    assert.match(output.parts[0].text, /Web session history URL \(Current TUI session\): https:\/\/active\.example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
+    const text = await __bifrostInternals.runBifrost({ directory: temp }, { stateDir: ".bifrost" }, "status", "ses_current")
+    assert.match(text, /Server mode: active/)
+    assert.match(text, /Attached to active TUI server: yes/)
+    assert.match(text, /Web PID: none \(active server is not Bifrost-managed\)/)
+    assert.match(text, /Password source: OPENCODE_SERVER_PASSWORD from active OpenCode server/)
+    assert.match(text, /Web session history URL \(Current TUI session\): https:\/\/active\.example\.trycloudflare\.com\/L1VzZXJzL3Rlc3QvcHJvamVjdA\/session\/ses_current/)
   } finally {
     await rm(temp, { recursive: true, force: true })
   }
@@ -410,11 +479,9 @@ await withSessionServer([
   const temp = await mkdtemp(path.join(tmpdir(), "bifrost-active-fail-test-"))
   const port = await freePort()
   try {
-    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
-    assert.match(output.parts[0].text, /active OpenCode server URL is stale or unreachable: http:\/\/127\.0\.0\.1:9/)
-    assert.match(output.parts[0].text, /did not start a proxy, tunnel, or separate Web server/)
+    const text = await __bifrostInternals.runBifrost({ directory: temp, serverUrl: new URL("http://127.0.0.1:9") }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 500 }, `start port ${port}`)
+    assert.match(text, /active OpenCode server URL is stale or unreachable: http:\/\/127\.0\.0\.1:9/)
+    assert.match(text, /did not start a proxy, tunnel, or separate Web server/)
     await new Promise((resolve) => setTimeout(resolve, 250))
     await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
   } finally {
@@ -423,21 +490,100 @@ await withSessionServer([
 }
 
 {
-  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-no-fallback-test-"))
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-fallback-test-"))
   const originalActiveServerUrl = process.env.BIFROST_ACTIVE_SERVER_URL
+  const originalPath = process.env.PATH
   try {
     delete process.env.BIFROST_ACTIVE_SERVER_URL
+    await writeFakeOpencode(path.join(temp, "bin"))
+    process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
     const port = await freePort()
-    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 500 })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: `start port ${port}` }, output)
-    assert.match(output.parts[0].text, /no active OpenCode server URL was available/)
-    assert.match(output.parts[0].text, /did not start a separate Web server/)
-    assert.match(output.parts[0].text, /run \/bifrost start web/)
-    await assert.rejects(fetch(`http://127.0.0.1:${port}/`))
+    const options = { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 5000 }
+    const text = await __bifrostInternals.runBifrost({ directory: temp }, options, `start port ${port}`)
+    assert.match(text, /Bifrost portal partially started|Bifrost portal started/)
+    assert.match(text, /Server mode: web/)
+    assert.match(text, /Fallback reason: no active OpenCode server URL was available|Fallback note: no active OpenCode server URL was available/)
+    const stopText = await __bifrostInternals.runBifrost({ directory: temp }, options, "stop")
+    assert.match(stopText, /OpenCode Web PID .*: stopped/)
   } finally {
+    process.env.PATH = originalPath
     if (originalActiveServerUrl === undefined) delete process.env.BIFROST_ACTIVE_SERVER_URL
     else process.env.BIFROST_ACTIVE_SERVER_URL = originalActiveServerUrl
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-auto-stale-fallback-test-"))
+  const originalPath = process.env.PATH
+  try {
+    await writeFakeOpencode(path.join(temp, "bin"))
+    process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
+    const port = await freePort()
+    const options = { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 5000 }
+    const input = { directory: temp, serverUrl: new URL("http://127.0.0.1:9") }
+    const text = await __bifrostInternals.runBifrost(input, options, `start port ${port}`)
+    assert.match(text, /Bifrost portal partially started|Bifrost portal started/)
+    assert.match(text, /Server mode: web/)
+    assert.match(text, /active OpenCode server URL is stale or unreachable: http:\/\/127\.0\.0\.1:9/)
+    const stopText = await __bifrostInternals.runBifrost(input, options, "stop")
+    assert.match(stopText, /OpenCode Web PID .*: stopped/)
+  } finally {
+    process.env.PATH = originalPath
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-stale-cleanup-test-"))
+  const originalPath = process.env.PATH
+  const staleChild = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" })
+  try {
+    await writeFakeOpencode(path.join(temp, "bin"))
+    process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
+    const stateDir = path.join(temp, ".bifrost")
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl: "http://127.0.0.1:1",
+      webPid: staleChild.pid,
+      tunnelPid: 999999,
+      tunnelProvider: "cloudflared",
+      serverMode: "web",
+      processes: { web: { pid: staleChild.pid, match: "setInterval" } },
+    })}\n`)
+    const options = { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 5000 }
+    const port = await freePort()
+    const text = await __bifrostInternals.runBifrost({ directory: temp }, options, `start port ${port}`)
+    assert.match(text, /Bifrost portal partially started|Bifrost portal started/)
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    assert.throws(() => process.kill(staleChild.pid, 0))
+    const stopText = await __bifrostInternals.runBifrost({ directory: temp }, options, "stop")
+    assert.match(stopText, /OpenCode Web PID .*: stopped/)
+  } finally {
+    process.env.PATH = originalPath
+    try { process.kill(staleChild.pid, "SIGTERM") } catch {}
+    await rm(temp, { recursive: true, force: true })
+  }
+}
+
+{
+  const temp = await mkdtemp(path.join(tmpdir(), "bifrost-stale-no-provenance-test-"))
+  const unrelatedChild = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" })
+  try {
+    const stateDir = path.join(temp, ".bifrost")
+    await mkdir(stateDir, { recursive: true })
+    await writeFile(path.join(stateDir, "state.json"), `${JSON.stringify({
+      localUrl: "http://127.0.0.1:1",
+      webPid: unrelatedChild.pid,
+      tunnelPid: 999999,
+      tunnelProvider: "cloudflared",
+      serverMode: "web",
+    })}\n`)
+    const stopText = await __bifrostInternals.runBifrost({ directory: temp }, { stateDir: ".bifrost" }, "stop")
+    assert.match(stopText, /OpenCode Web PID .*: already stopped/)
+    assert.doesNotThrow(() => process.kill(unrelatedChild.pid, 0))
+  } finally {
+    try { process.kill(unrelatedChild.pid, "SIGTERM") } catch {}
     await rm(temp, { recursive: true, force: true })
   }
 }
@@ -450,15 +596,15 @@ await withSessionServer([
     delete process.env.BIFROST_ACTIVE_SERVER_URL
     await writeFakeOpencode(path.join(temp, "bin"))
     process.env.PATH = `${path.join(temp, "bin")}:${originalPath}`
-    const hooks = await BifrostPlugin({ directory: temp }, { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 3000 })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start web" }, output)
-    assert.match(output.parts[0].text, /Bifrost portal partially started|Bifrost portal started/)
-    assert.match(output.parts[0].text, /Server mode: web/)
-    assert.match(output.parts[0].text, /Attached to active TUI server: no/)
-    const stopOutput = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "stop" }, stopOutput)
-    assert.match(stopOutput.parts[0].text, /OpenCode Web PID .*: stopped/)
+    const options = { stateDir: ".bifrost", serverMode: "auto", preferredTunnel: "true", startupTimeoutMs: 5000 }
+    const input = { directory: temp }
+    const text = await __bifrostInternals.runBifrost(input, options, "start web")
+    assert.match(text, /Bifrost portal partially started|Bifrost portal started/)
+    assert.match(text, /Server mode: web/)
+    assert.match(text, /Attached to active TUI server: no/)
+    assert.match(text, /Attach current session: opencode attach 'http:\/\/127\.0\.0\.1:\d+' --username 'opencode' --password 'bifrost-/)
+    const stopText = await __bifrostInternals.runBifrost(input, options, "stop")
+    assert.match(stopText, /OpenCode Web PID .*: stopped/)
   } finally {
     process.env.PATH = originalPath
     if (originalActiveServerUrl === undefined) delete process.env.BIFROST_ACTIVE_SERVER_URL
@@ -472,17 +618,16 @@ await withSessionServer([
 ], async (localUrl) => {
   const temp = await mkdtemp(path.join(tmpdir(), "bifrost-state-mode-test-"))
   try {
-    const hooks = await BifrostPlugin({ directory: temp, serverUrl: new URL(localUrl) }, { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 1000 })
-    const output = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "start" }, output)
-    assert.match(output.parts[0].text, /Bifrost portal partially started|Bifrost portal started/)
+    const options = { stateDir: ".bifrost", serverMode: "active", preferredTunnel: "true", startupTimeoutMs: 1000 }
+    const input = { directory: temp, serverUrl: new URL(localUrl) }
+    const text = await __bifrostInternals.runBifrost(input, options, "start")
+    assert.match(text, /Bifrost portal partially started|Bifrost portal started/)
     const stateDir = path.join(temp, ".bifrost")
     const statePath = path.join(stateDir, "state.json")
     assert.equal((await stat(stateDir)).mode & 0o777, 0o700)
     assert.equal((await stat(statePath)).mode & 0o777, 0o600)
-    const stopOutput = { parts: [] }
-    await hooks["command.execute.before"]({ command: "bifrost", arguments: "stop" }, stopOutput)
-    assert.match(stopOutput.parts[0].text, /Bifrost proxy PID .*: stopped/)
+    const stopText = await __bifrostInternals.runBifrost(input, options, "stop")
+    assert.match(stopText, /Bifrost proxy PID .*: stopped/)
   } finally {
     await rm(temp, { recursive: true, force: true })
   }

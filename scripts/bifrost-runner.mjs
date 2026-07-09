@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import BifrostPlugin from "../src/bifrost.mjs"
+import { runBifrost } from "../src/bifrost.mjs"
 
 const options = {}
 const args = []
 let sessionID = process.env.BIFROST_SESSION_ID || ""
-let activeServerUrl = ""
+let activeServerUrl = process.env.BIFROST_PLUGIN_ACTIVE_SERVER_URL || process.env.BIFROST_ACTIVE_SERVER_URL || ""
 
 for (let i = 2; i < process.argv.length; i += 1) {
   const arg = process.argv[i]
@@ -24,10 +24,7 @@ for (let i = 2; i < process.argv.length; i += 1) {
 }
 
 try {
-  const hooks = await BifrostPlugin({ directory: process.cwd(), serverUrl: activeServerUrl }, options)
-  const output = { parts: [] }
-  await hooks["command.execute.before"]({ command: "bifrost", sessionID, arguments: args.join(" ") }, output)
-  console.log(output.parts[0]?.text || "Bifrost finished without output.")
+  console.log(await runBifrost({ directory: process.cwd(), serverUrl: activeServerUrl }, options, args.join(" "), sessionID))
 } catch (error) {
   console.error(`Bifrost failed: ${error?.message || error}`)
   process.exitCode = 1

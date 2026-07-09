@@ -52,8 +52,8 @@ assert.match(COMMANDS.polaris.render("ship it"), /\/hugin, \/tyr, \/eitri, \/mun
 assert.match(COMMANDS.polaris.render("ship it"), /Do not call the task complete until planning, implementation, measurable outcome checks, and final review/)
 assert.match(COMMANDS.skuld.render("current diff"), /Review target:\ncurrent diff/)
 assert.match(COMMANDS.bifrost.render("status"), /opencode-bifrost --state-dir \.opencode\/bifrost/)
-assert.match(COMMANDS.bifrost.render("start"), /must not silently start managed Web mode/)
-assert.match(COMMANDS.bifrost.render("start"), /use start web/)
+assert.match(COMMANDS.bifrost.render("start"), /falls back to managed Web mode/)
+assert.match(COMMANDS.bifrost.render("start"), /serverMode: active/)
 assert.doesNotMatch(COMMANDS.bifrost.render("status; touch injected"), /-- status; touch injected/)
 assert.doesNotMatch(COMMANDS.bifrost.render("status"), /Start workflow:/)
 

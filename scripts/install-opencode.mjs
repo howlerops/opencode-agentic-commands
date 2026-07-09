@@ -6,7 +6,9 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { AgenticCommandsPlugin } from "../src/index.mjs"
 
-const PACKAGE_NAME = "opencode-agentic-commands"
+const PACKAGE_NAME = "@howlerops/valhalla"
+const OLD_PACKAGE_NAME = "opencode-agentic-commands"
+const PACKAGE_ALIASES = [PACKAGE_NAME, OLD_PACKAGE_NAME]
 const CONFIG_DIR = process.env.OPENCODE_CONFIG_DIR || path.join(homedir(), ".config", "opencode")
 const CONFIG_PATH = process.env.OPENCODE_CONFIG_PATH || path.join(CONFIG_DIR, "opencode.json")
 const COMMAND_DIR = process.env.OPENCODE_COMMAND_DIR || path.join(CONFIG_DIR, "command")
@@ -28,21 +30,49 @@ function writeJson(file, value) {
 }
 
 function hasPluginEntry(entry) {
-  if (entry === PACKAGE_NAME) return true
-  if (Array.isArray(entry) && entry[0] === PACKAGE_NAME) return true
+  if (PACKAGE_ALIASES.includes(entry)) return true
+  if (Array.isArray(entry) && PACKAGE_ALIASES.includes(entry[0])) return true
   return false
+}
+
+function normalizePluginEntry(entry) {
+  if (entry === OLD_PACKAGE_NAME) return PACKAGE_NAME
+  if (Array.isArray(entry) && entry[0] === OLD_PACKAGE_NAME) return [PACKAGE_NAME, ...entry.slice(1)]
+  return entry
+}
+
+function hasOptions(entry) {
+  return Array.isArray(entry) && entry.length > 1 && Object.keys(entry[1] || {}).length > 0
+}
+
+function dedupePluginEntries(entries) {
+  const deduped = []
+  let packageIndex = -1
+  for (const entry of entries.map(normalizePluginEntry)) {
+    if (!hasPluginEntry(entry)) {
+      deduped.push(entry)
+      continue
+    }
+    if (packageIndex === -1) {
+      packageIndex = deduped.push(entry) - 1
+      continue
+    }
+    if (hasOptions(entry) && !hasOptions(deduped[packageIndex])) deduped[packageIndex] = entry
+  }
+  return deduped
 }
 
 function ensurePluginConfig() {
   const config = readJson(CONFIG_PATH, { $schema: "https://opencode.ai/config.json" })
   config.$schema ||= "https://opencode.ai/config.json"
   config.plugin = Array.isArray(config.plugin) ? config.plugin : []
+  config.plugin = dedupePluginEntries(config.plugin)
   if (!config.plugin.some(hasPluginEntry)) config.plugin.push([PACKAGE_NAME, {}])
   writeJson(CONFIG_PATH, config)
 }
 
 function packageDependencySpec() {
-  const installedUnderNodeModules = path.basename(PACKAGE_ROOT) === PACKAGE_NAME && path.basename(path.dirname(PACKAGE_ROOT)) === "node_modules"
+  const installedUnderNodeModules = path.basename(PACKAGE_ROOT) === "valhalla" && path.basename(path.dirname(PACKAGE_ROOT)) === "@howlerops" && path.basename(path.dirname(path.dirname(PACKAGE_ROOT))) === "node_modules"
   if (installedUnderNodeModules && PACKAGE_JSON.version) return PACKAGE_JSON.version
   return `file:${PACKAGE_ROOT}`
 }
@@ -51,8 +81,12 @@ function ensurePackageDependency() {
   const packagePath = path.join(CONFIG_DIR, "package.json")
   const pkg = readJson(packagePath, { dependencies: {} })
   pkg.dependencies ||= {}
+  const hadOldDependency = OLD_PACKAGE_NAME in pkg.dependencies
+  delete pkg.dependencies[OLD_PACKAGE_NAME]
   if (!pkg.dependencies[PACKAGE_NAME]) {
     pkg.dependencies[PACKAGE_NAME] = packageDependencySpec()
+    writeJson(packagePath, pkg)
+  } else if (hadOldDependency) {
     writeJson(packagePath, pkg)
   }
 
