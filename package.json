@@ -4,6 +4,14 @@
   "description": "HowlerOps Valhalla: OpenCode plugins and Pi extensions for agentic planning, execution, review, research, orchestration, and remote portal workflows.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/howlerops/valhalla.git"
+  },
+  "bugs": {
+    "url": "https://github.com/howlerops/valhalla/issues"
+  },
+  "homepage": "https://github.com/howlerops/valhalla#readme",
   "main": "./src/index.mjs",
   "bin": {
     "opencode-agentic-commands": "./scripts/install-opencode.mjs",
@@ -40,6 +48,12 @@
     "prompts": [
       "./pi/prompts"
     ]
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "e2e:bifrost": "node scripts/bifrost-e2e-smoke.mjs",
